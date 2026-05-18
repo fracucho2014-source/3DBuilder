@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EduTool3D - Aprende 3D</title>
+    <style>
+        * { user-select: none; }
+        body { margin:0; overflow:hidden; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+        .app-container { display:flex; width:100vw; height:100vh; flex-direction:column; }
+        .menu-bar { background-color:#2c3e50; color:white; padding:8px 16px; display:flex; gap:20px; font-weight:bold; z-index:20; position:relative; box-shadow:0 2px 5px rgba(0,0,0,0.2); }
+        .menu { position:relative; cursor:pointer; padding:4px 12px; border-radius:4px; transition:background 0.2s; }
+        .menu:hover { background-color:#1a252f; }
+        .dropdown { display:none; position:absolute; top:100%; left:0; background-color:#34495e; min-width:180px; border-radius:4px; box-shadow:0 4px 8px rgba(0,0,0,0.3); z-index:100; }
+        .dropdown a { color:white; padding:8px 12px; display:block; text-decoration:none; font-size:14px; cursor:pointer; }
+        .dropdown a:hover { background-color:#1abc9c; }
+        .main-content { display:flex; flex:1; overflow:hidden; position:relative; }
+        .object-panel { width:260px; background-color:rgba(44,62,80,0.9); backdrop-filter:blur(8px); color:white; padding:15px; display:flex; flex-direction:column; gap:10px; border-radius:0 8px 8px 0; margin:10px 0; z-index:5; overflow-y:auto; pointer-events:auto; }
+        .object-panel h3 { margin:0 0 8px 0; border-bottom:1px solid #1abc9c; }
+        .object-list { list-style:none; padding:0; margin:0; max-height:300px; overflow-y:auto; }
+        .object-list li { padding:6px 8px; margin:2px 0; background-color:#1a252f; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+        .object-list li.selected { background-color:#1abc9c; color:#1a252f; font-weight:bold; }
+        .object-list li button { background-color:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer; padding:2px 6px; font-size:12px; margin-left:5px; }
+        .object-list li .props-btn { background-color:#3498db; margin-right:5px; }
+        .add-object-btn { background-color:#1abc9c; border:none; color:white; padding:6px; border-radius:4px; cursor:pointer; margin-top:5px; }
+        .properties-panel {
+            width: 0;
+            overflow-x: hidden;
+            transition: width 0.3s ease-out, padding 0.3s ease-out;
+            background-color: rgba(52,73,94,0.95);
+            backdrop-filter: blur(8px);
+            color: white;
+            border-radius: 8px 0 0 8px;
+            margin: 10px 0 10px auto;
+            z-index: 5;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            white-space: nowrap;
+        }
+        .properties-panel.open { width:280px; padding:15px; }
+        .properties-panel h3 { margin:0 0 8px 0; border-bottom:1px solid #1abc9c; white-space:normal; }
+        .prop-group { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; border-left:2px solid #1abc9c; padding-left:8px; white-space:normal; }
+        .prop-group label { font-size:13px; font-weight:bold; }
+        input, select, .color-input { background-color:#1a252f; border:1px solid #2c3e50; color:white; padding:6px; border-radius:4px; width:100%; box-sizing:border-box; }
+        .texture-preview { width:100%; height:60px; background-color:#1a252f; border-radius:4px; margin-top:5px; background-size:cover; background-position:center; }
+        .timeline-container {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 900px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 10px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        .modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#2c3e50; padding:20px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:1000; min-width:280px; color:white; }
+        .modal .title { font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #1abc9c; }
+        .modal .content { margin-bottom:20px; max-height:60vh; overflow-y:auto; white-space:normal; }
+        .modal button { background-color:#1abc9c; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; margin-right:8px; }
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
+        .loading-indicator { text-align:center; padding:20px; color:#1abc9c; font-style:italic; }
+        .float-panel {
+            position: fixed;
+            background: rgba(30,40,50,0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            z-index: 2000;
+            min-width: 400px;
+            max-width: 600px;
+            color: white;
+            cursor: default;
+        }
+        .float-panel-header {
+            background: rgba(26,188,156,0.8);
+            padding: 8px 12px;
+            cursor: move;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .float-panel-header h3 { margin:0; font-size:1.1rem; }
+        .float-panel-close { background:none; border:none; color:white; font-size:20px; cursor:pointer; }
+        .float-panel-content { padding:15px; overflow-y:auto; max-height:500px; white-space:normal; }
+        .lesson-pagination { display:flex; justify-content:center; gap:10px; margin-top:15px; }
+        .lesson-pagination button { background:#1abc9c; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:#1a252f; }
+        ::-webkit-scrollbar-thumb { background:#1abc9c; border-radius:3px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="menu-bar">
+        <div class="menu" data-menu="archivo">Archivo
+            <div class="dropdown" id="dropdownArchivo">
+                <a href="#" id="newProject" data-i18n="newProject">Nuevo</a>
+                <a href="#" id="exportSTL" data-i18n="exportSTL">Exportar a STL</a>
+                <a href="#" id="exportGLTF" data-i18n="exportGLTF">Exportar a GLTF</a>
+                <a href="#" id="exportOBJ" data-i18n="exportOBJ">Exportar a OBJ</a>
+                <a href="#" id="importModel" data-i18n="importModel">Importar modelo 3D</a>
+            </div>
+        </div>
+        <div class="menu" data-menu="editar">Editar
+            <div class="dropdown" id="dropdownEditar"></div>
+        </div>
+        <div class="menu" data-menu="insertar">Insertar
+            <div class="dropdown" id="dropdownInsertar"></div>
+        </div>
+        <div class="menu" data-menu="ver">Ver
+            <div class="dropdown" id="dropdownVer">
+                <a href="#" id="resetCamera" data-i18n="resetCamera">Restablecer cámara</a>
+                <a href="#" id="toggleGrid" data-i18n="toggleGrid">Ocultar/Mostrar rejilla</a>
+            </div>
+        </div>
+        <div class="menu" data-menu="config">Configuración
+            <div class="dropdown" id="dropdownConfig">
+                <a href="#" id="langEs">Español</a>
+                <a href="#" id="langEn">English</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="object-panel">
+            <h3 data-i18n="objectsTitle">📦 Objetos en escena</h3>
+            <ul class="object-list" id="objectList"></ul>
+            <button class="add-object-btn" id="loadModelBtn" data-i18n="loadModelBtn">📁 Cargar modelo</button>
+            <button class="add-object-btn" id="openLessonsBtn" style="margin-top:10px; background:#9b59b6;" data-i18n="learnBtn">🎓 Aprender</button>
+        </div>
+
+        <div class="properties-panel" id="propertiesPanel">
+            <h3 data-i18n="propertiesTitle">⚙️ Propiedades</h3>
+            <div id="propContent"><p style="color:#aaa;" data-i18n="selectObjectMsg">Selecciona un objeto</p></div>
+            <button id="effectsBtn" style="margin-top:10px;" data-i18n="effectsBtn">✨ Efectos</button>
+            <div class="prop-group"><label data-i18n="customTextureLabel">Cargar textura personalizada</label><input type="file" id="customTextureInput" accept="image/*"></div>
+        </div>
+    </div>
+
+    <div id="timelineContainer" class="timeline-container">
+        <div class="loading-indicator" data-i18n="loadingTimeline">⏳ Cargando línea de tiempo...</div>
+    </div>
+
+    <!-- Modales -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal" id="customModal">
+        <div class="title" id="modalTitle"></div>
+        <div class="content" id="modalContent"></div>
+        <div><button id="modalOk" data-i18n="accept">Aceptar</button><button id="modalCancel" data-i18n="cancel">Cancelar</button></div>
+    </div>
+    <div class="modal-overlay" id="floatModalOverlay"></div>
+    <div class="modal" id="floatModal">
+        <div class="title" id="floatModalTitle">Propiedades</div>
+        <div class="content" id="floatModalContent"></div>
+        <div><button id="floatModalClose" data-i18n="close">Cerrar</button></div>
+    </div>
+
+    <div id="lessonFloatPanel" class="float-panel" style="display:none;">
+        <div class="float-panel-header" id="lessonFloatHeader">
+            <h3 id="lessonFloatTitle" data-i18n="lessonsTitle">Lecciones</h3>
+            <button class="float-panel-close" id="closeLessonFloat">&times;</button>
+        </div>
+        <div class="float-panel-content" id="lessonFloatContent"></div>
+        <div class="lesson-pagination" id="lessonPagination"></div>
+    </div>
+
+<script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/" } }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js"></script>
+<script type="module">
+    import * as THREE from 'three';
+    import * as scene3D from './scene3D.js';
+    import * as project from './projectManager.js';
+    import * as exporter from './Exportar.js';
+    
+    // ==================== TRADUCCIONES ====================
+    const i18n = {
+        es: {
+            objectsTitle: "📦 Objetos en escena",
+            loadModelBtn: "📁 Cargar modelo",
+            learnBtn: "🎓 Aprender",
+            propertiesTitle: "⚙️ Propiedades",
+            selectObjectMsg: "Selecciona un objeto",
+            effectsBtn: "✨ Efectos",
+            customTextureLabel: "Cargar textura personalizada",
+            newProject: "Nuevo",
+            exportSTL: "Exportar a STL",
+            exportGLTF: "Exportar a GLTF",
+            exportOBJ: "Exportar a OBJ",
+            importModel: "Importar modelo 3D",
+            resetCamera: "Restablecer cámara",
+            toggleGrid: "Ocultar/Mostrar rejilla",
+            accept: "Aceptar",
+            cancel: "Cancelar",
+            close: "Cerrar",
+            lessonsTitle: "Lecciones",
+            loadingTimeline: "⏳ Cargando línea de tiempo...",
+            prevLesson: "◀ Lección anterior",
+            nextLesson: "Siguiente lección ▶",
+            lessonCompleted: "✅ ¡Lección completada!",
+            lessonActive: "Lección activa: ",
+            timelineHeader: "Línea de tiempo",
+            addKeyframe: "➕ Añadir Keyframe",
+            play: "▶ Reproducir",
+            stop: "⏹ Detener",
+            deleteOption: "Suprimir (Del)",
+            deleteConfirm: "¿Eliminar objeto seleccionado?",
+            noObject: "No hay objeto seleccionado",
+            noKeyframe: "No hay keyframe seleccionado",
+            undo: "Deshacer (Ctrl+Z)",
+            redo: "Rehacer (Ctrl+Y)",
+            copy: "Copiar (Ctrl+C)",
+            cut: "Cortar (Ctrl+X)",
+            paste: "Pegar (Ctrl+V)",
+            scale: "Dimensionar (Escala)",
+            selectAll: "Seleccionar todo (Ctrl+A)"
+        },
+        en: {
+            objectsTitle: "📦 Scene Objects",
+            loadModelBtn: "📁 Load model",
+            learnBtn: "🎓 Learn",
+            propertiesTitle: "⚙️ Properties",
+            selectObjectMsg: "Select an object",
+            effectsBtn: "✨ Effects",
+            customTextureLabel: "Load custom texture",
+            newProject: "New",
+            exportSTL: "Export to STL",
+            exportGLTF: "Export to GLTF",
+            exportOBJ: "Export to OBJ",
+            importModel: "Import 3D model",
+            resetCamera: "Reset camera",
+            toggleGrid: "Toggle grid",
+            accept: "Accept",
+            cancel: "Cancel",
+            close: "Close",
+            lessonsTitle: "Lessons",
+            loadingTimeline: "⏳ Loading timeline...",
+            prevLesson: "◀ Previous lesson",
+            nextLesson: "Next lesson ▶",
+            lessonCompleted: "✅ Lesson completed!",
+            lessonActive: "Active lesson: ",
+            timelineHeader: "Timeline",
+            addKeyframe: "➕ Add Keyframe",
+            play: "▶ Play",
+            stop: "⏹ Stop",
+            deleteOption: "Delete (Del)",
+            deleteConfirm: "Delete selected object?",
+            noObject: "No object selected",
+            noKeyframe: "No keyframe selected",
+            undo: "Undo (Ctrl+Z)",
+            redo: "Redo (Ctrl+Y)",
+            copy: "Copy (Ctrl+C)",
+            cut: "Cut (Ctrl+X)",
+            paste: "Paste (Ctrl+V)",
+            scale: "Scale",
+            selectAll: "Select all (Ctrl+A)"
+        }
+    };
+    let currentLang = 'es';
+    function t(key) { return i18n[currentLang][key] || key; }
+    function updateUIStrings() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (key) el.innerText = t(key);
+        });
+        // Actualizar elementos dinámicos del menú Editar (creados después)
+        document.querySelectorAll('#dropdownEditar a').forEach(a => {
+            const key = a.getAttribute('data-i18n-key');
+            if (key) a.innerText = t(key);
+        });
+        if (timeline && timeline.updateTranslations) timeline.updateTranslations(currentLang);
+        if (lessonFloatPanel.style.display === 'block') updateLessonPanelContent();
+    }
+    document.getElementById('langEs').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'es'; updateUIStrings(); });
+    document.getElementById('langEn').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'en'; updateUIStrings(); });
+
+    // ==================== LECCIONES ====================
+    const lessons = [
+        { id:1, title:{ es:"Mover un objeto", en:"Move an object" }, description:{ es:"Selecciona el cubo y muévelo a la posición X=2, Y=0, Z=0 usando el widget de flechas.", en:"Select the cube and move it to position X=2, Y=0, Z=0 using the arrow widget." }, content:"<p>Usa las flechas rojas, verdes y azules.</p>", validate:"selectedObject && selectedObject.position.x > 1.9 && selectedObject.position.x < 2.1 && Math.abs(selectedObject.position.y) < 0.1 && Math.abs(selectedObject.position.z) < 0.1" },
+        { id:2, title:{ es:"Cambiar color", en:"Change color" }, description:{ es:"Cambia el color del cubo a rojo (usa el panel de propiedades).", en:"Change the cube's color to red (use the properties panel)." }, content:"<p>Usa el selector de color.</p>", validate:"selectedObject && selectedObject.material.color.getHex() === 0xff0000" },
+        { id:3, title:{ es:"Añadir un cilindro", en:"Add a cylinder" }, description:{ es:"Desde el menú Insertar, añade un cilindro.", en:"From the Insert menu, add a cylinder." }, content:"<p>Ve a Insertar → Cilindro.</p>", validate:"sceneObjects.some(obj => obj.userData && obj.userData.type === 'cylinder')" },
+        { id:4, title:{ es:"Aplicar textura", en:"Apply texture" }, description:{ es:"Selecciona el cilindro y asígnale una textura (cuadrícula, ladrillo, piedra, madera o metal).", en:"Select the cylinder and assign a texture (grid, brick, stone, wood or metal)." }, content:"<p>En el panel de propiedades, elige una textura.</p>", validate:"selectedObject && selectedObject.material && selectedObject.material.map !== null" },
+        { id:5, title:{ es:"Escalar un objeto", en:"Scale an object" }, description:{ es:"Aumenta la escala del cubo a 1.5 en todos los ejes.", en:"Increase the cube's scale to 1.5 on all axes." }, content:"<p>Usa el panel de propiedades o la herramienta Dimensionar.</p>", validate:"selectedObject && selectedObject.scale.x > 1.4 && selectedObject.scale.x < 1.6 && selectedObject.scale.y > 1.4 && selectedObject.scale.y < 1.6 && selectedObject.scale.z > 1.4 && selectedObject.scale.z < 1.6" }
+    ];
+    let currentLessonIndex = 0;
+
+    // ==================== CARGA DE TIMELINE (CORREGIDA) ====================
+    let timeline = null;
+    const timelineContainer = document.getElementById('timelineContainer');
+    async function loadTimeline() {
+        try {
+            const module = await import('./Timeline.js');
+            const { createTimeline } = module;
+            timelineContainer.innerHTML = '';
+            timeline = createTimeline('timelineContainer', {
+                maxTime: 5,
+                onTimeChange: (time) => {
+                    // Solo actualizar el projectManager cuando el cambio viene del timeline (arrastre, reproducción)
+                    project.setCurrentTime(time);
+                },
+                onKeyframeAdd: (time) => { project.addKeyframe(time); },
+                onKeyframeMove: (index, newTime) => { project.clearKeyframes(); timeline.getKeyframes().forEach(kf => project.addKeyframe(kf.time)); },
+                onKeyframeRemove: (index, removedTime) => { project.clearKeyframes(); timeline.getKeyframes().forEach(kf => project.addKeyframe(kf.time)); }
+            });
+            // Sincronizar desde project hacia timeline (para animación) SIN causar recursión
+            project.setOnTimeUpdate((time) => {
+                if (timeline) timeline.updatePlayheadOnly(time);
+            });
+            timeline.updateTranslations = (lang) => {
+                const header = timelineContainer.querySelector('.timeline-header span:first-child');
+                if (header) header.innerText = t('timelineHeader');
+                const addBtn = timelineContainer.querySelector('#timelineAddBtn');
+                if (addBtn) addBtn.innerText = t('addKeyframe');
+                const playBtn = timelineContainer.querySelector('#timelinePlayBtn');
+                if (playBtn) playBtn.innerText = t('play');
+                const stopBtn = timelineContainer.querySelector('#timelineStopBtn');
+                if (stopBtn) stopBtn.innerText = t('stop');
+            };
+            timeline.updateTranslations(currentLang);
+        } catch (error) {
+            console.error(error);
+            timelineContainer.innerHTML = `<div class="loading-indicator" style="color:#e74c3c;">❌ Error loading timeline</div>`;
+        }
+    }
+
+    // ==================== PANEL FLOTANTE LECCIONES ====================
+    const lessonFloatPanel = document.getElementById('lessonFloatPanel');
+    const lessonFloatTitle = document.getElementById('lessonFloatTitle');
+    const lessonFloatContent = document.getElementById('lessonFloatContent');
+    const closeLessonFloat = document.getElementById('closeLessonFloat');
+    const lessonPagination = document.getElementById('lessonPagination');
+    const openLessonsBtn = document.getElementById('openLessonsBtn');
+
+    function updateLessonPanelContent() {
+        const lesson = lessons[currentLessonIndex];
+        const titleText = currentLang === 'es' ? lesson.title.es : lesson.title.en;
+        const descText = currentLang === 'es' ? lesson.description.es : lesson.description.en;
+        lessonFloatTitle.innerText = titleText;
+        lessonFloatContent.innerHTML = `
+            <h4>${titleText}</h4>
+            <p>${descText}</p>
+            ${lesson.content ? `<div>${lesson.content}</div>` : ''}
+            <div id="lessonValidationStatus" style="margin-top:12px; padding:6px; background:#1a252f; border-radius:6px;"></div>
+        `;
+        updateLessonValidationStatus();
+        lessonPagination.innerHTML = `
+            <button id="prevLessonBtn" ${currentLessonIndex === 0 ? 'disabled' : ''}>${t('prevLesson')}</button>
+            <span style="margin:0 10px;">${currentLessonIndex+1} / ${lessons.length}</span>
+            <button id="nextLessonBtn" ${currentLessonIndex === lessons.length-1 ? 'disabled' : ''}>${t('nextLesson')}</button>
+        `;
+        document.getElementById('prevLessonBtn')?.addEventListener('click', () => { if (currentLessonIndex > 0) { currentLessonIndex--; updateLessonPanelContent(); } });
+        document.getElementById('nextLessonBtn')?.addEventListener('click', () => { if (currentLessonIndex < lessons.length-1) { currentLessonIndex++; updateLessonPanelContent(); } });
+    }
+    function updateLessonValidationStatus() {
+        const lesson = lessons[currentLessonIndex];
+        if (!lesson.validate) return;
+        try {
+            const selectedObj = scene3D.getSelectedObject()?.mesh;
+            const sceneObjects = scene3D.getAllMeshes();
+            const validateFn = new Function('selectedObject', 'sceneObjects', 'return (' + lesson.validate + ')');
+            const isValid = validateFn(selectedObj, sceneObjects);
+            const statusDiv = document.getElementById('lessonValidationStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = isValid ? `<span style="color:#2ecc71;">${t('lessonCompleted')}</span>` : `<span style="color:#e67e22;">⏳ ${t('lessonActive')} ${currentLang === 'es' ? lesson.title.es : lesson.title.en}</span>`;
+            }
+        } catch(e) { console.warn(e); }
+    }
+    openLessonsBtn.addEventListener('click', () => { updateLessonPanelContent(); lessonFloatPanel.style.display = 'block'; lessonFloatPanel.style.left = '150px'; lessonFloatPanel.style.top = '100px'; });
+    closeLessonFloat.addEventListener('click', () => { lessonFloatPanel.style.display = 'none'; });
+    // Arrastre panel lecciones
+    let isDraggingLesson = false, lessonDragOffsetX = 0, lessonDragOffsetY = 0;
+    const lessonFloatHeader = document.getElementById('lessonFloatHeader');
+    lessonFloatHeader.addEventListener('mousedown', (e) => {
+        if (e.target === closeLessonFloat) return;
+        isDraggingLesson = true;
+        lessonDragOffsetX = e.clientX - lessonFloatPanel.offsetLeft;
+        lessonDragOffsetY = e.clientY - lessonFloatPanel.offsetTop;
+        lessonFloatPanel.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isDraggingLesson) return;
+        lessonFloatPanel.style.left = (e.clientX - lessonDragOffsetX) + 'px';
+        lessonFloatPanel.style.top = (e.clientY - lessonDragOffsetY) + 'px';
+    });
+    window.addEventListener('mouseup', () => { isDraggingLesson = false; lessonFloatPanel.style.cursor = 'default'; });
+
+    // ==================== RESTO APLICACIÓN ====================
+    let currentSelectedId = null;
+    let undoStack = [], redoStack = [], isUndoRedo = false, clipboardData = null;
+    
+    // DOM
+    const objectListEl = document.getElementById('objectList');
+    const propertiesPanel = document.getElementById('propertiesPanel');
+    const propContent = document.getElementById('propContent');
+    const loadModelBtn = document.getElementById('loadModelBtn');
+    const exportSTLBtn = document.getElementById('exportSTL');
+    const exportGLTFBtn = document.getElementById('exportGLTF');
+    const exportOBJBtn = document.getElementById('exportOBJ');
+    const importModelBtn = document.getElementById('importModel');
+    const resetCameraBtn = document.getElementById('resetCamera');
+    const toggleGridBtn = document.getElementById('toggleGrid');
+    const newProjectBtn = document.getElementById('newProject');
+    const effectsBtnUI = document.getElementById('effectsBtn');
+    const dropdownEditarUI = document.getElementById('dropdownEditar');
+    const dropdownInsertarUI = document.getElementById('dropdownInsertar');
+    const customTextureInputUI = document.getElementById('customTextureInput');
+
+    // Funciones de UI
+    function openPropertiesPanel() { if (!propertiesPanel.classList.contains('open')) propertiesPanel.classList.add('open'); }
+    function closePropertiesPanel() { propertiesPanel.classList.remove('open'); }
+    function showLoadingInProperties() { propContent.innerHTML = '<div class="loading-indicator">⏳ Cargando propiedades...</div>'; openPropertiesPanel(); }
+
+    async function buildPropertiesHTML(props) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+        const textureOptions = ['none', 'grid', 'brick', 'stone', 'wood', 'metal', 'marble', 'grass'];
+        let textureSelect = '<select id="objTexture">';
+        textureOptions.forEach(opt => { textureSelect += `<option value="${opt}" ${props.texture===opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase()+opt.slice(1)}</option>`; });
+        textureSelect += '</select>';
+        return `
+            <div class="prop-group"><label>Nombre</label><input type="text" id="objName" value="${props.name}"></div>
+            <div class="prop-group"><label>Color</label><input type="color" id="objColor" value="#${props.color.toString(16).padStart(6,'0')}"></div>
+            <div class="prop-group"><label>Textura</label>${textureSelect}<div class="texture-preview" id="texturePreview" style="background-image:url('${getTexturePreview(props.texture)}');"></div></div>
+            <div class="prop-group"><label>Posición</label><div><input type="number" step="0.1" id="posX" value="${props.position.x}"><input type="number" step="0.1" id="posY" value="${props.position.y}"><input type="number" step="0.1" id="posZ" value="${props.position.z}"></div></div>
+            <div class="prop-group"><label>Escala</label><div><input type="number" step="0.1" id="scaleX" value="${props.scale.x}"><input type="number" step="0.1" id="scaleY" value="${props.scale.y}"><input type="number" step="0.1" id="scaleZ" value="${props.scale.z}"></div></div>
+            <div class="prop-group"><label>Rotación (rad)</label><div><input type="number" step="0.1" id="rotX" value="${props.rotation.x}"><input type="number" step="0.1" id="rotY" value="${props.rotation.y}"><input type="number" step="0.1" id="rotZ" value="${props.rotation.z}"></div></div>
+        `;
+    }
+
+    function updateObjectPropertyWithUndo(prop, value) {
+        const obj = scene3D.getSelectedObject();
+        if (obj && !isUndoRedo) {
+            const oldProps = scene3D.getSelectedObjectProperties();
+            const oldValue = oldProps ? oldProps[prop] : undefined;
+            scene3D.updateSelectedObjectProperty(prop, value);
+            if (oldValue !== value) recordAction({ undo: () => scene3D.updateSelectedObjectProperty(prop, oldValue), redo: () => scene3D.updateSelectedObjectProperty(prop, value) });
+        } else {
+            scene3D.updateSelectedObjectProperty(prop, value);
+        }
+    }
+
+    async function showProperties(objectId) {
+        if (!objectId) { propContent.innerHTML = '<p style="color:#aaa;">Selecciona un objeto</p>'; closePropertiesPanel(); return; }
+        showLoadingInProperties();
+        const props = scene3D.getSelectedObjectProperties();
+        if (!props) { propContent.innerHTML = '<p style="color:#aaa;">No se pudieron cargar las propiedades</p>'; return; }
+        const html = await buildPropertiesHTML(props);
+        propContent.innerHTML = html;
+        document.getElementById('objName').onchange = (e) => { scene3D.getSelectedObject().name = e.target.value; updateObjectList(); };
+        document.getElementById('objColor').oninput = (e) => updateObjectPropertyWithUndo('color', e.target.value);
+        const texSel = document.getElementById('objTexture');
+        texSel.onchange = (e) => { updateObjectPropertyWithUndo('texture', e.target.value === 'none' ? null : e.target.value); document.getElementById('texturePreview').style.backgroundImage = `url('${getTexturePreview(e.target.value)}')`; };
+        document.getElementById('posX').onchange = (e) => updateObjectPropertyWithUndo('position', { x: parseFloat(e.target.value), y: props.position.y, z: props.position.z });
+        document.getElementById('posY').onchange = (e) => updateObjectPropertyWithUndo('position', { x: props.position.x, y: parseFloat(e.target.value), z: props.position.z });
+        document.getElementById('posZ').onchange = (e) => updateObjectPropertyWithUndo('position', { x: props.position.x, y: props.position.y, z: parseFloat(e.target.value) });
+        document.getElementById('scaleX').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: parseFloat(e.target.value), y: props.scale.y, z: props.scale.z });
+        document.getElementById('scaleY').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: props.scale.x, y: parseFloat(e.target.value), z: props.scale.z });
+        document.getElementById('scaleZ').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: props.scale.x, y: props.scale.y, z: parseFloat(e.target.value) });
+        document.getElementById('rotX').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: parseFloat(e.target.value), y: props.rotation.y, z: props.rotation.z });
+        document.getElementById('rotY').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: props.rotation.x, y: parseFloat(e.target.value), z: props.rotation.z });
+        document.getElementById('rotZ').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: props.rotation.x, y: props.rotation.y, z: parseFloat(e.target.value) });
+    }
+
+    function getTexturePreview(key) {
+        const previews = {
+            grid: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23444"/%3E%3Crect width="50" height="50" fill="%23aaa"/%3E%3Crect x="50" y="50" width="50" height="50" fill="%23aaa"/%3E%3C/svg%3E',
+            brick: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23b85c1a"/%3E%3Crect x="0" y="0" width="45" height="20" fill="%23a04010"/%3E%3Crect x="50" y="0" width="45" height="20" fill="%23a04010"/%3E%3Crect x="25" y="25" width="45" height="20" fill="%23a04010"/%3E%3C/svg%3E',
+            stone: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23888"/%3E%3Ccircle cx="20" cy="30" r="5" fill="%23666"/%3E%3Ccircle cx="70" cy="50" r="6" fill="%23666"/%3E%3Ccircle cx="40" cy="80" r="4" fill="%23666"/%3E%3C/svg%3E',
+            wood: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%238B5A2B"/%3E%3Cpath d="M0,20 L100,25 M0,50 L100,55 M0,80 L100,85" stroke="%23402010" stroke-width="3"/%3E%3C/svg%3E',
+            metal: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="1" y2="1"%3E%3Cstop offset="0" stop-color="%23C0C0C0"/%3E%3Cstop offset="1" stop-color="%23808080"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="100" height="100" fill="url(%23g)"/%3E%3C/svg%3E',
+            marble: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23e0e0e0"/%3E%3Cpath d="M10,10 L30,30 M40,20 L60,40 M70,30 L90,50" stroke="%23999" stroke-width="2" fill="none"/%3E%3C/svg%3E',
+            grass: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%234caf50"/%3E%3Cpath d="M0,50 L20,30 L40,55 L60,25 L80,60 L100,40 L100,100 L0,100 Z" fill="%23388e3c"/%3E%3C/svg%3E'
+        };
+        return previews[key] || '';
+    }
+
+    function updateObjectList() {
+        const objects = scene3D.getObjectList();
+        objectListEl.innerHTML = '';
+        if (!objects || objects.length === 0) {
+            const emptyMsg = document.createElement('li'); emptyMsg.textContent = 'No hay objetos'; emptyMsg.style.cssText = 'color:#aaa; text-align:center; padding:8px;';
+            objectListEl.appendChild(emptyMsg); closePropertiesPanel(); return;
+        }
+        objects.forEach(obj => {
+            const li = document.createElement('li');
+            li.textContent = `${obj.name} (${obj.type})`;
+            if (currentSelectedId === obj.id) li.classList.add('selected');
+            const propsBtn = document.createElement('button'); propsBtn.textContent = '📋'; propsBtn.classList.add('props-btn');
+            propsBtn.addEventListener('click', (e) => { e.stopPropagation(); showFloatProperties(obj.id); });
+            const delBtn = document.createElement('button'); delBtn.textContent = '❌';
+            delBtn.addEventListener('click', (e) => { e.stopPropagation(); removeObjectWithUndo(obj.id); });
+            li.appendChild(propsBtn); li.appendChild(delBtn);
+            li.addEventListener('click', () => scene3D.selectObject(obj.id));
+            objectListEl.appendChild(li);
+        });
+        updatePropertiesSubmenu();
+    }
+
+    function updatePropertiesSubmenu() {
+        // Limpiar submenú Editar (excepto los fijos que se añaden después)
+        const existingSeparator = document.getElementById('propertiesSubmenuSeparator');
+        if (existingSeparator) existingSeparator.remove();
+        const existingLabel = document.querySelector('#dropdownEditar span');
+        if (existingLabel && existingLabel.textContent === 'Propiedades de:') existingLabel.remove();
+        const existingItems = document.querySelectorAll('#dropdownEditar a[data-prop-item]');
+        existingItems.forEach(item => item.remove());
+        const objects = scene3D.getObjectList();
+        if (objects.length === 0) return;
+        const separator = document.createElement('hr');
+        separator.id = 'propertiesSubmenuSeparator';
+        dropdownEditarUI.appendChild(separator);
+        const submenuLabel = document.createElement('span');
+        submenuLabel.textContent = 'Propiedades de:';
+        submenuLabel.style.padding = '8px 12px';
+        submenuLabel.style.display = 'block';
+        submenuLabel.style.color = '#1abc9c';
+        submenuLabel.style.fontWeight = 'bold';
+        dropdownEditarUI.appendChild(submenuLabel);
+        objects.forEach(obj => {
+            const a = document.createElement('a');
+            a.href = '#';
+            a.textContent = obj.name;
+            a.setAttribute('data-prop-item', 'true');
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                scene3D.selectObject(obj.id);
+            });
+            dropdownEditarUI.appendChild(a);
+        });
+    }
+
+    // Propiedades flotantes
+    const floatModalOverlay = document.getElementById('floatModalOverlay');
+    const floatModal = document.getElementById('floatModal');
+    const floatModalTitle = document.getElementById('floatModalTitle');
+    const floatModalContent = document.getElementById('floatModalContent');
+    const floatModalClose = document.getElementById('floatModalClose');
+    function showFloatProperties(objectId) {
+        const obj = scene3D.getObject(objectId);
+        if (!obj) return;
+        const data = scene3D.getObjectData(objectId);
+        if (!data) return;
+        const html = `
+            <div class="prop-group"><label>Nombre</label><input type="text" id="floatObjName" value="${data.name}"></div>
+            <div class="prop-group"><label>Color</label><input type="color" id="floatObjColor" value="#${data.color.toString(16).padStart(6,'0')}"></div>
+            <div class="prop-group"><label>Posición</label><div><input type="number" step="0.1" id="floatPosX" value="${data.position.x}"><input type="number" step="0.1" id="floatPosY" value="${data.position.y}"><input type="number" step="0.1" id="floatPosZ" value="${data.position.z}"></div></div>
+            <div class="prop-group"><label>Escala</label><div><input type="number" step="0.1" id="floatScaleX" value="${data.scale.x}"><input type="number" step="0.1" id="floatScaleY" value="${data.scale.y}"><input type="number" step="0.1" id="floatScaleZ" value="${data.scale.z}"></div></div>
+            <div class="prop-group"><label>Rotación (rad)</label><div><input type="number" step="0.1" id="floatRotX" value="${data.rotation.x}"><input type="number" step="0.1" id="floatRotY" value="${data.rotation.y}"><input type="number" step="0.1" id="floatRotZ" value="${data.rotation.z}"></div></div>
+        `;
+        floatModalTitle.innerText = `Propiedades de: ${data.name}`;
+        floatModalContent.innerHTML = html;
+        floatModalOverlay.style.display = 'block';
+        floatModal.style.display = 'block';
+        document.getElementById('floatObjName').onchange = (e) => { obj.name = e.target.value; updateObjectList(); };
+        document.getElementById('floatObjColor').oninput = (e) => obj.mesh.material.color.set(e.target.value);
+        document.getElementById('floatPosX').onchange = (e) => obj.mesh.position.x = parseFloat(e.target.value);
+        document.getElementById('floatPosY').onchange = (e) => obj.mesh.position.y = parseFloat(e.target.value);
+        document.getElementById('floatPosZ').onchange = (e) => obj.mesh.position.z = parseFloat(e.target.value);
+        document.getElementById('floatScaleX').onchange = (e) => obj.mesh.scale.x = parseFloat(e.target.value);
+        document.getElementById('floatScaleY').onchange = (e) => obj.mesh.scale.y = parseFloat(e.target.value);
+        document.getElementById('floatScaleZ').onchange = (e) => obj.mesh.scale.z = parseFloat(e.target.value);
+        document.getElementById('floatRotX').onchange = (e) => obj.mesh.rotation.x = parseFloat(e.target.value);
+        document.getElementById('floatRotY').onchange = (e) => obj.mesh.rotation.y = parseFloat(e.target.value);
+        document.getElementById('floatRotZ').onchange = (e) => obj.mesh.rotation.z = parseFloat(e.target.value);
+    }
+    floatModalClose.addEventListener('click', () => { floatModalOverlay.style.display = 'none'; floatModal.style.display = 'none'; });
+
+    // Efectos
+    effectsBtnUI.addEventListener('click', async () => {
+        const obj = scene3D.getSelectedObject();
+        if (!obj) { showCustomAlert('Selecciona un objeto primero.'); return; }
+        const props = scene3D.getSelectedObjectProperties();
+        const html = `
+            <label>Opacidad: <span id="opacityVal">${props.opacity}</span></label>
+            <input type="range" id="effectOpacity" min="0" max="1" step="0.01" value="${props.opacity}">
+            <label>Rugosidad: <span id="roughnessVal">${props.roughness}</span></label>
+            <input type="range" id="effectRoughness" min="0" max="1" step="0.01" value="${props.roughness}">
+            <label>Metalicidad: <span id="metalnessVal">${props.metalness}</span></label>
+            <input type="range" id="effectMetalness" min="0" max="1" step="0.01" value="${props.metalness}">
+            <label>Emisión (color):</label>
+            <input type="color" id="effectEmissive" value="#${props.emissive.toString(16).padStart(6,'0')}">
+        `;
+        await showCustomModal('Efectos del objeto', html, true);
+        const opacity = parseFloat(document.getElementById('effectOpacity')?.value || props.opacity);
+        const roughness = parseFloat(document.getElementById('effectRoughness')?.value || props.roughness);
+        const metalness = parseFloat(document.getElementById('effectMetalness')?.value || props.metalness);
+        const emissive = document.getElementById('effectEmissive')?.value || '#000000';
+        updateObjectPropertyWithUndo('opacity', opacity);
+        updateObjectPropertyWithUndo('roughness', roughness);
+        updateObjectPropertyWithUndo('metalness', metalness);
+        updateObjectPropertyWithUndo('emissive', emissive);
+        showProperties(currentSelectedId);
+    });
+
+    // Textura personalizada
+    customTextureInputUI.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                const texture = new THREE.CanvasTexture(img);
+                const obj = scene3D.getSelectedObject();
+                if (obj && obj.mesh.material) {
+                    obj.mesh.material.map = texture;
+                    obj.mesh.material.needsUpdate = true;
+                    showCustomAlert('Textura personalizada aplicada');
+                }
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ==================== MENÚS DESPLEGABLES ====================
+    function setupDropdowns() {
+        const menus = document.querySelectorAll('.menu');
+        let activeDropdown = null;
+        menus.forEach(menu => {
+            const dropdown = menu.querySelector('.dropdown');
+            if (!dropdown) return;
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (activeDropdown === dropdown) {
+                    dropdown.style.display = 'none';
+                    activeDropdown = null;
+                } else {
+                    if (activeDropdown) activeDropdown.style.display = 'none';
+                    dropdown.style.display = 'block';
+                    activeDropdown = dropdown;
+                }
+            });
+        });
+        document.addEventListener('click', () => {
+            if (activeDropdown) {
+                activeDropdown.style.display = 'none';
+                activeDropdown = null;
+            }
+        });
+    }
+    setupDropdowns();
+
+    // ==================== CONSTRUCCIÓN MENÚ EDITAR (TODAS LAS OPCIONES) ====================
+    const editItems = [
+        { key: 'undo', action: undo, i18n: 'undo' },
+        { key: 'redo', action: redo, i18n: 'redo' },
+        { key: 'copy', action: copySelected, i18n: 'copy' },
+        { key: 'cut', action: cutSelected, i18n: 'cut' },
+        { key: 'paste', action: pasteSelected, i18n: 'paste' },
+        { key: 'scale', action: () => { const obj = scene3D.getSelectedObject(); if(obj) { scene3D.transformControls.setMode('scale'); showCustomAlert(t('scale')); } else showCustomAlert(t('noObject')); }, i18n: 'scale' },
+        { key: 'delete', action: deleteSelected, i18n: 'deleteOption' },
+        { key: 'selectAll', action: selectAll, i18n: 'selectAll' }
+    ];
+    editItems.forEach(item => {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.setAttribute('data-i18n-key', item.i18n);
+        a.innerText = t(item.i18n);
+        a.addEventListener('click', (e) => { e.preventDefault(); item.action(); });
+        dropdownEditarUI.appendChild(a);
+    });
+    // Línea separadora y submenú "Propiedades de:" se añadirán dinámicamente después
+
+    // ==================== CONSTRUCCIÓN MENÚ INSERTAR ====================
+    const primitives = [
+        { name: 'Cubo', func: () => scene3D.createCube('Cubo') },
+        { name: 'Cilindro', func: () => scene3D.createCylinder('Cilindro') },
+        { name: 'Esfera', func: () => scene3D.createSphere('Esfera') },
+        { name: 'Cono', func: () => scene3D.createCone('Cono') },
+        { name: 'Toro', func: () => scene3D.createTorus('Toro') },
+        { name: 'Prisma Trapezoidal', func: () => scene3D.createTrapezoidalPrism('Prisma Trapezoidal') },
+        { name: 'Tetraedro', func: () => scene3D.createTetrahedron('Tetraedro') },
+        { name: 'Cilindro truncado', func: () => scene3D.createCylinderTruncated('Cilindro truncado') }
+    ];
+    primitives.forEach(p => {
+        const a = document.createElement('a'); a.href = '#'; a.textContent = p.name;
+        a.addEventListener('click', (e) => { e.preventDefault(); p.func(); updateObjectList(); });
+        dropdownInsertarUI.appendChild(a);
+    });
+    const loadModelItem = document.createElement('a'); loadModelItem.href = '#'; loadModelItem.textContent = 'Cargar modelo 3D...';
+    loadModelItem.addEventListener('click', (e) => { e.preventDefault(); triggerLoadModel(); });
+    dropdownInsertarUI.appendChild(loadModelItem);
+
+    // ==================== FUNCIONES AUXILIARES ====================
+    function triggerLoadModel() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.gltf,.glb,.obj,.stl';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) { try { await scene3D.loadModel(file); updateObjectList(); } catch(err) { showCustomAlert('Error al cargar modelo.'); } }
+        };
+        input.click();
+    }
+    loadModelBtn.addEventListener('click', triggerLoadModel);
+    importModelBtn.addEventListener('click', triggerLoadModel);
+    exportSTLBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportSTL(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
+    exportGLTFBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportGLTF(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
+    exportOBJBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportOBJ(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
+    resetCameraBtn.addEventListener('click', () => scene3D.resetCamera());
+    toggleGridBtn.addEventListener('click', () => scene3D.toggleGrid());
+    newProjectBtn.addEventListener('click', () => { scene3D.getObjectList().forEach(obj => scene3D.removeObject(obj.id)); currentSelectedId = null; updateObjectList(); project.resetProject(); clipboardData = null; closePropertiesPanel(); updatePropertiesSubmenu(); });
+
+    // ==================== OPCIÓN SUPRIMIR (DELETE) ====================
+    async function deleteSelected() {
+        if (timeline && timeline.getSelectedKeyframeIndex && timeline.getSelectedKeyframeIndex() !== -1) {
+            timeline.removeSelectedKeyframe();
+            showCustomAlert('Keyframe eliminado');
+            return;
+        }
+        const obj = scene3D.getSelectedObject();
+        if (obj) {
+            if (confirm(t('deleteConfirm'))) removeObjectWithUndo(obj.id);
+        } else {
+            showCustomAlert(t('noObject'));
+        }
+    }
+
+    // ==================== UNDO/REDO, CLIPBOARD ====================
+    function copySelected() { const data = scene3D.getSelectedObjectData(); if (data) clipboardData = data; }
+    function cutSelected() { const obj = scene3D.getSelectedObject(); if (!obj) return; copySelected(); removeObjectWithUndo(obj.id); }
+    function pasteSelected() { if (!clipboardData) return; const newId = scene3D.createObjectFromData(clipboardData, clipboardData.name + '_copia'); scene3D.selectObject(newId); currentSelectedId = newId; updateObjectList(); showProperties(newId); }
+    function selectAll() { const objects = scene3D.getObjectList(); if (objects.length) scene3D.selectObject(objects[0].id); }
+    function recordAction(action) { if (!isUndoRedo) { undoStack.push(action); redoStack = []; if (undoStack.length > 100) undoStack.shift(); } }
+    function undo() { if (undoStack.length === 0) return; isUndoRedo = true; const action = undoStack.pop(); action.undo(); redoStack.push(action); isUndoRedo = false; clipboardData = null; updateObjectList(); if (currentSelectedId) showProperties(currentSelectedId); }
+    function redo() { if (redoStack.length === 0) return; isUndoRedo = true; const action = redoStack.pop(); action.redo(); undoStack.push(action); isUndoRedo = false; clipboardData = null; updateObjectList(); if (currentSelectedId) showProperties(currentSelectedId); }
+    function removeObjectWithUndo(id) { const data = scene3D.getObjectData(id); if (data) recordAction({ undo: () => { scene3D.createObjectFromData(data, data.name); updateObjectList(); }, redo: () => { scene3D.removeObject(id); updateObjectList(); } }); scene3D.removeObject(id); if (currentSelectedId === id) { currentSelectedId = null; closePropertiesPanel(); } updateObjectList(); setTimeout(() => updatePropertiesSubmenu(), 10); }
+
+    // ==================== ATEJOS DE TECLADO ====================
+    Mousetrap.bind(['w', 'W'], () => { const cam = scene3D.getCamera(); if (cam) { const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion); f.y = 0; f.normalize(); cam.position.addScaledVector(f, 0.2); scene3D.updateCameraControls(); } return false; });
+    Mousetrap.bind(['s', 'S'], () => { const cam = scene3D.getCamera(); if (cam) { const b = new THREE.Vector3(0,0,1).applyQuaternion(cam.quaternion); b.y = 0; b.normalize(); cam.position.addScaledVector(b, 0.2); scene3D.updateCameraControls(); } return false; });
+    Mousetrap.bind(['a', 'A'], () => { const cam = scene3D.getCamera(); if (cam) { const l = new THREE.Vector3(-1,0,0).applyQuaternion(cam.quaternion); l.y = 0; l.normalize(); cam.position.addScaledVector(l, 0.2); scene3D.updateCameraControls(); } return false; });
+    Mousetrap.bind(['d', 'D'], () => { const cam = scene3D.getCamera(); if (cam) { const r = new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion); r.y = 0; r.normalize(); cam.position.addScaledVector(r, 0.2); scene3D.updateCameraControls(); } return false; });
+    Mousetrap.bind('ctrl+z', () => { undo(); return false; });
+    Mousetrap.bind('ctrl+y', () => { redo(); return false; });
+    Mousetrap.bind('ctrl+x', () => { cutSelected(); return false; });
+    Mousetrap.bind('ctrl+c', () => { copySelected(); return false; });
+    Mousetrap.bind('ctrl+v', () => { pasteSelected(); return false; });
+    Mousetrap.bind('ctrl+a', () => { selectAll(); return false; });
+    Mousetrap.bind('del', () => { deleteSelected(); return false; });
+    Mousetrap.bind('ctrl+s', () => { if (timeline) timeline.play(); return false; });
+    Mousetrap.bind('ctrl+t', () => { if (timeline) timeline.stop(); return false; });
+
+    // ==================== INICIALIZACIÓN ====================
+    project.initProject(() => scene3D.getSelectedObject()?.mesh, (pos, rot, scale) => { const obj = scene3D.getSelectedObject(); if(obj){ obj.mesh.position.set(pos.x,pos.y,pos.z); obj.mesh.rotation.set(rot.x,rot.y,rot.z); obj.mesh.scale.set(scale.x,scale.y,scale.z); } }, () => scene3D.getAllMeshes());
+    loadTimeline();
+    scene3D.onSelectionChange((id) => { currentSelectedId = id; updateObjectList(); if(id) showProperties(id); else closePropertiesPanel(); });
+    scene3D.onObjectListChange(() => { updateObjectList(); if(currentSelectedId && !scene3D.getObject(currentSelectedId)) { currentSelectedId = null; closePropertiesPanel(); } else if(currentSelectedId) showProperties(currentSelectedId); });
+    scene3D.setOnObjectTransform(() => { if(currentSelectedId) showProperties(currentSelectedId); });
+
+    // Loop validación lecciones
+    function validationLoop() { updateLessonValidationStatus(); requestAnimationFrame(validationLoop); }
+    validationLoop();
+
+    // Modal personalizado
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    function showCustomModal(title, contentHtml, showCancel = true) {
+        return new Promise((resolve) => {
+            modalTitle.innerText = title;
+            modalContent.innerHTML = contentHtml;
+            modalOverlay.style.display = 'block';
+            modal.style.display = 'block';
+            const onOk = () => { closeModal(); resolve(true); };
+            const onCancel = () => { closeModal(); resolve(false); };
+            document.getElementById('modalOk').onclick = onOk;
+            document.getElementById('modalCancel').onclick = onCancel;
+            if (!showCancel) document.getElementById('modalCancel').style.display = 'none';
+        });
+    }
+    function closeModal() { modalOverlay.style.display = 'none'; modal.style.display = 'none'; }
+    window.showCustomAlert = (msg) => showCustomModal('Información', `<p>${msg}</p>`, false);
+
+    requestAnimationFrame(() => { updateObjectList(); setTimeout(updateObjectList, 200); });
+</script>
+</body>
+</html>
