@@ -3,33 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>EduTool3D - Aprende 3D</title>
+    <title>3DBuilder - Modelado y Animación 3D</title>
     <style>
+        /* ==================== VARIABLES GLOBALES ==================== */
+        :root {
+            --bg-primary: #1c1c24;
+            --bg-secondary: #2c3e50;
+            --bg-panel: rgba(44,62,80,0.9);
+            --text-primary: white;
+            --text-secondary: #aaa;
+            --accent: #1abc9c;
+            --accent-hover: #16a085;
+            --timeline-bg: #1e2a36;
+            --timeline-track: #1a252f;
+            --border-color: #2c3e50;
+            --input-bg: #1a252f;
+        }
+        body.light-mode {
+            --bg-primary: #e9eef3;
+            --bg-secondary: #cfd8e6;
+            --bg-panel: rgba(245,248,250,0.95);
+            --text-primary: #1e2a36;
+            --text-secondary: #4a627a;
+            --accent: #16a085;
+            --accent-hover: #1abc9c;
+            --timeline-bg: #ffffff;
+            --timeline-track: #f0f4f8;
+            --border-color: #bdc3c7;
+            --input-bg: #ffffff;
+        }
         * { user-select: none; }
-        body { margin:0; overflow:hidden; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
         .app-container { display:flex; width:100vw; height:100vh; flex-direction:column; }
-        .menu-bar { background-color:#2c3e50; color:white; padding:8px 16px; display:flex; gap:20px; font-weight:bold; z-index:20; position:relative; box-shadow:0 2px 5px rgba(0,0,0,0.2); }
+        .menu-bar {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            display: flex;
+            gap: 20px;
+            font-weight: bold;
+            z-index: 20;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         .menu { position:relative; cursor:pointer; padding:4px 12px; border-radius:4px; transition:background 0.2s; }
-        .menu:hover { background-color:#1a252f; }
-        .dropdown { display:none; position:absolute; top:100%; left:0; background-color:#34495e; min-width:180px; border-radius:4px; box-shadow:0 4px 8px rgba(0,0,0,0.3); z-index:100; }
-        .dropdown a { color:white; padding:8px 12px; display:block; text-decoration:none; font-size:14px; cursor:pointer; }
-        .dropdown a:hover { background-color:#1abc9c; }
+        .menu:hover { background-color: var(--accent-hover); }
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: var(--bg-secondary);
+            min-width: 180px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        .dropdown a {
+            color: var(--text-primary);
+            padding: 8px 12px;
+            display: block;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .dropdown a:hover { background-color: var(--accent); }
         .main-content { display:flex; flex:1; overflow:hidden; position:relative; }
-        .object-panel { width:260px; background-color:rgba(44,62,80,0.9); backdrop-filter:blur(8px); color:white; padding:15px; display:flex; flex-direction:column; gap:10px; border-radius:0 8px 8px 0; margin:10px 0; z-index:5; overflow-y:auto; pointer-events:auto; }
-        .object-panel h3 { margin:0 0 8px 0; border-bottom:1px solid #1abc9c; }
+        .object-panel {
+            width: 260px;
+            background-color: var(--bg-panel);
+            backdrop-filter: blur(8px);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+            z-index: 5;
+            overflow-y: auto;
+            pointer-events: auto;
+        }
+        .object-panel h3 {
+            margin: 0 0 8px 0;
+            border-bottom: 1px solid var(--accent);
+            color: var(--text-primary);
+        }
         .object-list { list-style:none; padding:0; margin:0; max-height:300px; overflow-y:auto; }
-        .object-list li { padding:6px 8px; margin:2px 0; background-color:#1a252f; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-        .object-list li.selected { background-color:#1abc9c; color:#1a252f; font-weight:bold; }
-        .object-list li button { background-color:#e74c3c; border:none; color:white; border-radius:4px; cursor:pointer; padding:2px 6px; font-size:12px; margin-left:5px; }
-        .object-list li .props-btn { background-color:#3498db; margin-right:5px; }
-        .add-object-btn { background-color:#1abc9c; border:none; color:white; padding:6px; border-radius:4px; cursor:pointer; margin-top:5px; }
+        .object-list li {
+            padding: 6px 8px;
+            margin: 2px 0;
+            background-color: var(--timeline-track);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+        }
+        .object-list li.selected { background-color: var(--accent); color: var(--bg-primary); font-weight:bold; }
+        .object-list li button {
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .object-list li .props-btn { background-color: #3498db; color: white; margin-right:5px; transition: background 0.2s; }
+        .object-list li .props-btn:hover { background-color: #2980b9; }
+        .object-list li .del-btn { background-color: #e74c3c; color: white; }
+        .object-list li .del-btn:hover { background-color: #c0392b; }
+        .add-object-btn {
+            background-color: var(--accent);
+            border: none;
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
         .properties-panel {
             width: 0;
             overflow-x: hidden;
             transition: width 0.3s ease-out, padding 0.3s ease-out;
-            background-color: rgba(52,73,94,0.95);
+            background-color: var(--bg-panel);
             backdrop-filter: blur(8px);
-            color: white;
             border-radius: 8px 0 0 8px;
             margin: 10px 0 10px auto;
             z-index: 5;
@@ -40,34 +145,242 @@
             white-space: nowrap;
         }
         .properties-panel.open { width:280px; padding:15px; }
-        .properties-panel h3 { margin:0 0 8px 0; border-bottom:1px solid #1abc9c; white-space:normal; }
-        .prop-group { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; border-left:2px solid #1abc9c; padding-left:8px; white-space:normal; }
+        .properties-panel h3 {
+            margin: 0 0 8px 0;
+            border-bottom: 1px solid var(--accent);
+            white-space: normal;
+        }
+        .prop-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 12px;
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+            white-space: normal;
+        }
         .prop-group label { font-size:13px; font-weight:bold; }
-        input, select, .color-input { background-color:#1a252f; border:1px solid #2c3e50; color:white; padding:6px; border-radius:4px; width:100%; box-sizing:border-box; }
-        .texture-preview { width:100%; height:60px; background-color:#1a252f; border-radius:4px; margin-top:5px; background-size:cover; background-position:center; }
+        input, select, .color-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .texture-preview {
+            width: 100%;
+            height: 60px;
+            background-color: var(--timeline-track);
+            border-radius: 4px;
+            margin-top: 5px;
+            background-size: cover;
+            background-position: center;
+        }
+        /* Ventana flotante para preview de cámara (arrastrable y colapsable) */
+        .camera-float-panel {
+            display: none;
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 340px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            z-index: 2000;
+            overflow: hidden;
+        }
+        .camera-float-panel.active { display: block; }
+        .camera-float-header {
+            background: var(--accent);
+            padding: 8px 12px;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+        .camera-float-header span { cursor: pointer; }
+        .camera-float-content {
+            padding: 10px;
+        }
+        .camera-preview-canvas {
+            width: 100%;
+            height: auto;
+            background: #000;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+        /* Estilos de línea de tiempo */
         .timeline-container {
-            position: absolute;
-            bottom: 80px;
+            position: fixed;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             width: 80%;
-            max-width: 900px;
-            background: rgba(0,0,0,0.8);
+            max-width: 1200px;
+            background: rgba(0,0,0,0.85);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            padding: 10px;
-            z-index: 20;
+            padding: 8px;
+            z-index: 30;
             pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
         }
-        .modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#2c3e50; padding:20px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:1000; min-width:280px; color:white; }
-        .modal .title { font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #1abc9c; }
-        .modal .content { margin-bottom:20px; max-height:60vh; overflow-y:auto; white-space:normal; }
-        .modal button { background-color:#1abc9c; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; margin-right:8px; }
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
-        .loading-indicator { text-align:center; padding:20px; color:#1abc9c; font-style:italic; }
-        .float-panel {
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            padding: 5px 10px;
+            background: var(--accent);
+            border-radius: 8px 8px 0 0;
+            color: white;
+        }
+        .timeline-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 5px;
+            padding: 5px;
+        }
+        .timeline-controls button, .timeline-controls input {
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .timeline-controls label, .timeline-controls label span { color: var(--text-primary) !important; }
+        .timeline-main { display: flex; gap: 10px; margin-top: 8px; }
+        .timeline-canvas {
+            background: var(--timeline-bg);
+            border-radius: 8px;
+            position: relative;
+            min-height: 150px;
+            overflow-x: auto;
+            flex: 1;
+        }
+        .timeline-ruler { height: 20px; background: var(--bg-secondary); position: relative; }
+        .timeline-tracks { position: relative; }
+        .timeline-track { height: 50px; margin-top: 2px; background: var(--timeline-track); border-radius: 4px; position: relative; }
+        .track-label {
+            position: absolute;
+            left: 5px;
+            top: -18px;
+            font-size: 10px;
+            background: var(--accent);
+            padding: 2px 6px;
+            border-radius: 10px;
+            z-index: 5;
+            white-space: nowrap;
+            color: white;
+        }
+        .keyframe-marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 1px solid white;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+        .keyframe-marker.selected { background: #e74c3c; transform: translate(-50%, -50%) scale(1.2); }
+        .playhead {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: #e74c3c;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+        .keyframe-list-panel {
+            width: 200px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .keyframe-list-header {
+            background: var(--accent);
+            padding: 4px 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 12px;
+        }
+        .keyframe-list-content {
+            max-height: 150px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease-in-out;
+            background: var(--bg-panel);
+        }
+        .keyframe-list-content.collapsed { max-height: 0; padding: 0; overflow: hidden; }
+        .keyframe-list-item {
+            font-size: 11px;
+            padding: 2px 4px;
+            margin: 2px 0;
+            background: var(--timeline-track);
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+        .collapsible-content { max-height: 300px; overflow-y: auto; transition: max-height 0.3s; }
+        .collapsible-content.collapsed { max-height: 0; overflow: hidden; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+        .custom-modal {
+            display: none;
             position: fixed;
-            background: rgba(30,40,50,0.95);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 1000;
+            min-width: 280px;
+            color: var(--text-primary);
+        }
+        .custom-modal .title { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--accent); }
+        .custom-modal .content { margin-bottom: 20px; max-height: 60vh; overflow-y: auto; }
+        .custom-modal button {
+            background-color: var(--accent);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .object-select-list { list-style: none; padding: 0; margin: 0; }
+        .object-select-list li { padding: 8px; margin: 4px 0; background: var(--timeline-track); border-radius: 4px; cursor: pointer; }
+        .object-select-list li:hover { background: var(--accent); }
+        .float-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-panel);
             backdrop-filter: blur(12px);
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.3);
@@ -75,11 +388,10 @@
             z-index: 2000;
             min-width: 400px;
             max-width: 600px;
-            color: white;
-            cursor: default;
+            color: var(--text-primary);
         }
         .float-panel-header {
-            background: rgba(26,188,156,0.8);
+            background: var(--accent);
             padding: 8px 12px;
             cursor: move;
             border-radius: 12px 12px 0 0;
@@ -88,43 +400,79 @@
             align-items: center;
         }
         .float-panel-header h3 { margin:0; font-size:1.1rem; }
-        .float-panel-close { background:none; border:none; color:white; font-size:20px; cursor:pointer; }
+        .float-panel-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
         .float-panel-content { padding:15px; overflow-y:auto; max-height:500px; white-space:normal; }
         .lesson-pagination { display:flex; justify-content:center; gap:10px; margin-top:15px; }
-        .lesson-pagination button { background:#1abc9c; border:none; padding:6px 12px; border-radius:20px; cursor:pointer; }
-        ::-webkit-scrollbar { width:6px; }
-        ::-webkit-scrollbar-track { background:#1a252f; }
-        ::-webkit-scrollbar-thumb { background:#1abc9c; border-radius:3px; }
+        .lesson-pagination button {
+            background: var(--accent);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        /* Barra de progreso para exportar video */
+        .progress-bar {
+            width: 100%;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 6px;
+            background-color: var(--accent);
+            transition: width 0.2s;
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="menu-bar">
-        <div class="menu" data-menu="archivo">Archivo
+        <div class="menu" data-menu="archivo"><span data-i18n="menuArchivo">Archivo</span>
             <div class="dropdown" id="dropdownArchivo">
-                <a href="#" id="newProject" data-i18n="newProject">Nuevo</a>
-                <a href="#" id="exportSTL" data-i18n="exportSTL">Exportar a STL</a>
-                <a href="#" id="exportGLTF" data-i18n="exportGLTF">Exportar a GLTF</a>
-                <a href="#" id="exportOBJ" data-i18n="exportOBJ">Exportar a OBJ</a>
-                <a href="#" id="importModel" data-i18n="importModel">Importar modelo 3D</a>
+                <a href="#" data-i18n="newProject" id="newProject">Nuevo</a>
+                <a href="#" data-i18n="exportProject" id="exportProject">Exportar proyecto (ZIP)</a>
+                <a href="#" data-i18n="importProject" id="importProject">Importar proyecto (ZIP)</a>
+                <hr style="margin:4px 0; border-color:var(--border-color);">
+                <a href="#" data-i18n="exportSTL" id="exportSTL">Exportar a STL</a>
+                <a href="#" data-i18n="exportGLTF" id="exportGLTF">Exportar a GLTF</a>
+                <a href="#" data-i18n="exportOBJ" id="exportOBJ">Exportar a OBJ</a>
+                <a href="#" data-i18n="importModel" id="importModel">Importar modelo 3D</a>
             </div>
         </div>
-        <div class="menu" data-menu="editar">Editar
+        <div class="menu" data-menu="editar"><span data-i18n="menuEditar">Editar</span>
             <div class="dropdown" id="dropdownEditar"></div>
         </div>
-        <div class="menu" data-menu="insertar">Insertar
+        <div class="menu" data-menu="insertar"><span data-i18n="menuInsertar">Insertar</span>
             <div class="dropdown" id="dropdownInsertar"></div>
         </div>
-        <div class="menu" data-menu="ver">Ver
+        <div class="menu" data-menu="ver"><span data-i18n="menuVer">Ver</span>
             <div class="dropdown" id="dropdownVer">
-                <a href="#" id="resetCamera" data-i18n="resetCamera">Restablecer cámara</a>
-                <a href="#" id="toggleGrid" data-i18n="toggleGrid">Ocultar/Mostrar rejilla</a>
+                <a href="#" data-i18n="resetCamera" id="resetCamera">Restablecer cámara</a>
+                <a href="#" data-i18n="toggleGrid" id="toggleGrid">Ocultar/Mostrar rejilla</a>
             </div>
         </div>
-        <div class="menu" data-menu="config">Configuración
+        <div class="menu" data-menu="config"><span data-i18n="menuConfig">Configuración</span>
             <div class="dropdown" id="dropdownConfig">
-                <a href="#" id="langEs">Español</a>
-                <a href="#" id="langEn">English</a>
+                <a href="#" data-i18n="langEs" id="langEs">Español</a>
+                <a href="#" data-i18n="langEn" id="langEn">English</a>
+                <a href="#" data-i18n="toggleTheme" id="toggleTheme">Modo Claro/Oscuro</a>
+                <a href="#" data-i18n="exportLista" id="exportLista">Exportar Lista.json</a>
+                <a href="#" data-i18n="importLista" id="importLista">Importar Lista.json</a>
+            </div>
+        </div>
+        <!-- Nuevo menú "Más" -->
+        <div class="menu" data-menu="more"><span data-i18n="menuMore">Más</span>
+            <div class="dropdown" id="dropdownMore">
+                <a href="#" data-i18n="info" id="infoBtn">Información</a>
+                <a href="#" data-i18n="changeTimelineMode" id="changeTimelineModeBtn">Cambiar modo de timeline</a>
             </div>
         </div>
     </div>
@@ -136,33 +484,69 @@
             <button class="add-object-btn" id="loadModelBtn" data-i18n="loadModelBtn">📁 Cargar modelo</button>
             <button class="add-object-btn" id="openLessonsBtn" style="margin-top:10px; background:#9b59b6;" data-i18n="learnBtn">🎓 Aprender</button>
         </div>
-
         <div class="properties-panel" id="propertiesPanel">
             <h3 data-i18n="propertiesTitle">⚙️ Propiedades</h3>
-            <div id="propContent"><p style="color:#aaa;" data-i18n="selectObjectMsg">Selecciona un objeto</p></div>
+            <div id="propContent"><p style="color:var(--text-secondary);" data-i18n="selectObjectMsg">Selecciona un objeto</p></div>
             <button id="effectsBtn" style="margin-top:10px;" data-i18n="effectsBtn">✨ Efectos</button>
             <div class="prop-group"><label data-i18n="customTextureLabel">Cargar textura personalizada</label><input type="file" id="customTextureInput" accept="image/*"></div>
         </div>
     </div>
 
     <div id="timelineContainer" class="timeline-container">
-        <div class="loading-indicator" data-i18n="loadingTimeline">⏳ Cargando línea de tiempo...</div>
+        <div class="timeline-header" id="timelineHeader">
+            <span data-i18n="timelineHeader">📊 Línea de tiempo</span>
+            <div>
+                <span style="font-size:12px;" data-i18n="speedLabel">Velocidad: </span>
+                <input type="range" id="speedSlider" min="0.1" max="3" step="0.01" value="1" style="width:80px;">
+                <span id="speedValue">1.0x</span>
+                <button id="toggleTimelineBtn" style="margin-left:10px;">▼</button>
+            </div>
+        </div>
+        <div id="timelineContent" class="collapsible-content">
+            <div class="timeline-controls">
+                <button id="timelineAddBtn" data-i18n="addKeyframe">➕ Añadir Keyframe</button>
+                <button id="timelinePlayBtn" data-i18n="play">▶ Reproducir</button>
+                <button id="timelineStopBtn" data-i18n="stop">⏹ Detener</button>
+                <label><span data-i18n="globalTimeLabel">Tiempo global:</span> <span id="globalTime">0.00s</span></label>
+            </div>
+            <div class="timeline-main">
+                <div id="timelineCanvas" class="timeline-canvas">
+                    <div class="timeline-ruler"></div>
+                    <div class="timeline-tracks"></div>
+                </div>
+                <div class="keyframe-list-panel" id="keyframeListPanel">
+                    <div class="keyframe-list-header" id="keyframeListHeader">
+                        <span data-i18n="keyframesListTitle">📋 Keyframes</span>
+                        <span id="keyframeListToggle">▼</span>
+                    </div>
+                    <div id="keyframeListContent" class="keyframe-list-content">
+                        <div style="font-size:10px; text-align:center;" data-i18n="selectObjectKeyframeMsg">Selecciona un objeto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Modales -->
+    <!-- Ventana flotante para preview de cámara (arrastrable y colapsable) -->
+    <div id="cameraFloatPanel" class="camera-float-panel">
+        <div class="camera-float-header" id="cameraFloatHeader">
+            <span>🎥 Vista de cámara</span>
+            <span id="cameraFloatToggle" style="cursor:pointer;">▼</span>
+        </div>
+        <div id="cameraFloatContent" class="camera-float-content">
+            <canvas id="cameraPreviewCanvas" class="camera-preview-canvas" width="320" height="240"></canvas>
+            <div class="progress-bar" id="videoProgressBar" style="display:none;"><div class="progress-fill" id="videoProgressFill"></div></div>
+            <button id="exportAnimationBtn" style="width:100%; margin-top:5px;" data-i18n="exportAnim">Exportar video</button>
+        </div>
+    </div>
+
+    <!-- Modales comunes -->
     <div class="modal-overlay" id="modalOverlay"></div>
-    <div class="modal" id="customModal">
+    <div class="custom-modal" id="customModal">
         <div class="title" id="modalTitle"></div>
         <div class="content" id="modalContent"></div>
         <div><button id="modalOk" data-i18n="accept">Aceptar</button><button id="modalCancel" data-i18n="cancel">Cancelar</button></div>
     </div>
-    <div class="modal-overlay" id="floatModalOverlay"></div>
-    <div class="modal" id="floatModal">
-        <div class="title" id="floatModalTitle">Propiedades</div>
-        <div class="content" id="floatModalContent"></div>
-        <div><button id="floatModalClose" data-i18n="close">Cerrar</button></div>
-    </div>
-
     <div id="lessonFloatPanel" class="float-panel" style="display:none;">
         <div class="float-panel-header" id="lessonFloatHeader">
             <h3 id="lessonFloatTitle" data-i18n="lessonsTitle">Lecciones</h3>
@@ -171,396 +555,1112 @@
         <div class="float-panel-content" id="lessonFloatContent"></div>
         <div class="lesson-pagination" id="lessonPagination"></div>
     </div>
+    <div class="modal-overlay" id="floatModalOverlay"></div>
+    <div class="custom-modal" id="floatModal">
+        <div class="title" id="floatModalTitle">Propiedades del objeto</div>
+        <div class="content" id="floatModalContent"></div>
+        <div><button id="floatModalClose" data-i18n="close">Cerrar</button></div>
+    </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/" } }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js"></script>
 <script type="module">
     import * as THREE from 'three';
-    import * as scene3D from './scene3D.js';
-    import * as project from './projectManager.js';
-    import * as exporter from './Exportar.js';
-    
-    // ==================== TRADUCCIONES ====================
-    const i18n = {
-        es: {
-            objectsTitle: "📦 Objetos en escena",
-            loadModelBtn: "📁 Cargar modelo",
-            learnBtn: "🎓 Aprender",
-            propertiesTitle: "⚙️ Propiedades",
-            selectObjectMsg: "Selecciona un objeto",
-            effectsBtn: "✨ Efectos",
-            customTextureLabel: "Cargar textura personalizada",
-            newProject: "Nuevo",
-            exportSTL: "Exportar a STL",
-            exportGLTF: "Exportar a GLTF",
-            exportOBJ: "Exportar a OBJ",
-            importModel: "Importar modelo 3D",
-            resetCamera: "Restablecer cámara",
-            toggleGrid: "Ocultar/Mostrar rejilla",
-            accept: "Aceptar",
-            cancel: "Cancelar",
-            close: "Cerrar",
-            lessonsTitle: "Lecciones",
-            loadingTimeline: "⏳ Cargando línea de tiempo...",
-            prevLesson: "◀ Lección anterior",
-            nextLesson: "Siguiente lección ▶",
-            lessonCompleted: "✅ ¡Lección completada!",
-            lessonActive: "Lección activa: ",
-            timelineHeader: "Línea de tiempo",
-            addKeyframe: "➕ Añadir Keyframe",
-            play: "▶ Reproducir",
-            stop: "⏹ Detener",
-            deleteOption: "Suprimir (Del)",
-            deleteConfirm: "¿Eliminar objeto seleccionado?",
-            noObject: "No hay objeto seleccionado",
-            noKeyframe: "No hay keyframe seleccionado",
-            undo: "Deshacer (Ctrl+Z)",
-            redo: "Rehacer (Ctrl+Y)",
-            copy: "Copiar (Ctrl+C)",
-            cut: "Cortar (Ctrl+X)",
-            paste: "Pegar (Ctrl+V)",
-            scale: "Dimensionar (Escala)",
-            selectAll: "Seleccionar todo (Ctrl+A)"
-        },
-        en: {
-            objectsTitle: "📦 Scene Objects",
-            loadModelBtn: "📁 Load model",
-            learnBtn: "🎓 Learn",
-            propertiesTitle: "⚙️ Properties",
-            selectObjectMsg: "Select an object",
-            effectsBtn: "✨ Effects",
-            customTextureLabel: "Load custom texture",
-            newProject: "New",
-            exportSTL: "Export to STL",
-            exportGLTF: "Export to GLTF",
-            exportOBJ: "Export to OBJ",
-            importModel: "Import 3D model",
-            resetCamera: "Reset camera",
-            toggleGrid: "Toggle grid",
-            accept: "Accept",
-            cancel: "Cancel",
-            close: "Close",
-            lessonsTitle: "Lessons",
-            loadingTimeline: "⏳ Loading timeline...",
-            prevLesson: "◀ Previous lesson",
-            nextLesson: "Next lesson ▶",
-            lessonCompleted: "✅ Lesson completed!",
-            lessonActive: "Active lesson: ",
-            timelineHeader: "Timeline",
-            addKeyframe: "➕ Add Keyframe",
-            play: "▶ Play",
-            stop: "⏹ Stop",
-            deleteOption: "Delete (Del)",
-            deleteConfirm: "Delete selected object?",
-            noObject: "No object selected",
-            noKeyframe: "No keyframe selected",
-            undo: "Undo (Ctrl+Z)",
-            redo: "Redo (Ctrl+Y)",
-            copy: "Copy (Ctrl+C)",
-            cut: "Cut (Ctrl+X)",
-            paste: "Paste (Ctrl+V)",
-            scale: "Scale",
-            selectAll: "Select all (Ctrl+A)"
-        }
-    };
-    let currentLang = 'es';
-    function t(key) { return i18n[currentLang][key] || key; }
-    function updateUIStrings() {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (key) el.innerText = t(key);
-        });
-        // Actualizar elementos dinámicos del menú Editar (creados después)
-        document.querySelectorAll('#dropdownEditar a').forEach(a => {
-            const key = a.getAttribute('data-i18n-key');
-            if (key) a.innerText = t(key);
-        });
-        if (timeline && timeline.updateTranslations) timeline.updateTranslations(currentLang);
-        if (lessonFloatPanel.style.display === 'block') updateLessonPanelContent();
-    }
-    document.getElementById('langEs').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'es'; updateUIStrings(); });
-    document.getElementById('langEn').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'en'; updateUIStrings(); });
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { TransformControls } from 'three/addons/controls/TransformControls.js';
+    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
-    // ==================== LECCIONES ====================
-    const lessons = [
-        { id:1, title:{ es:"Mover un objeto", en:"Move an object" }, description:{ es:"Selecciona el cubo y muévelo a la posición X=2, Y=0, Z=0 usando el widget de flechas.", en:"Select the cube and move it to position X=2, Y=0, Z=0 using the arrow widget." }, content:"<p>Usa las flechas rojas, verdes y azules.</p>", validate:"selectedObject && selectedObject.position.x > 1.9 && selectedObject.position.x < 2.1 && Math.abs(selectedObject.position.y) < 0.1 && Math.abs(selectedObject.position.z) < 0.1" },
-        { id:2, title:{ es:"Cambiar color", en:"Change color" }, description:{ es:"Cambia el color del cubo a rojo (usa el panel de propiedades).", en:"Change the cube's color to red (use the properties panel)." }, content:"<p>Usa el selector de color.</p>", validate:"selectedObject && selectedObject.material.color.getHex() === 0xff0000" },
-        { id:3, title:{ es:"Añadir un cilindro", en:"Add a cylinder" }, description:{ es:"Desde el menú Insertar, añade un cilindro.", en:"From the Insert menu, add a cylinder." }, content:"<p>Ve a Insertar → Cilindro.</p>", validate:"sceneObjects.some(obj => obj.userData && obj.userData.type === 'cylinder')" },
-        { id:4, title:{ es:"Aplicar textura", en:"Apply texture" }, description:{ es:"Selecciona el cilindro y asígnale una textura (cuadrícula, ladrillo, piedra, madera o metal).", en:"Select the cylinder and assign a texture (grid, brick, stone, wood or metal)." }, content:"<p>En el panel de propiedades, elige una textura.</p>", validate:"selectedObject && selectedObject.material && selectedObject.material.map !== null" },
-        { id:5, title:{ es:"Escalar un objeto", en:"Scale an object" }, description:{ es:"Aumenta la escala del cubo a 1.5 en todos los ejes.", en:"Increase the cube's scale to 1.5 on all axes." }, content:"<p>Usa el panel de propiedades o la herramienta Dimensionar.</p>", validate:"selectedObject && selectedObject.scale.x > 1.4 && selectedObject.scale.x < 1.6 && selectedObject.scale.y > 1.4 && selectedObject.scale.y < 1.6 && selectedObject.scale.z > 1.4 && selectedObject.scale.z < 1.6" }
-    ];
-    let currentLessonIndex = 0;
+    // ==================== EXPORTACIÓN DE VÍDEO (integrada) ====================
+    async function exportAnimationFromCamera(cameraMesh, duration, speed, onProgress, scene, setCurrentTime, gridGroup) {
+        const originalGridVisible = gridGroup.visible;
+        const originalCameraVisible = cameraMesh.visible;
+        gridGroup.visible = false;
+        cameraMesh.visible = false;
 
-    // ==================== CARGA DE TIMELINE (CORREGIDA) ====================
-    let timeline = null;
-    const timelineContainer = document.getElementById('timelineContainer');
-    async function loadTimeline() {
-        try {
-            const module = await import('./Timeline.js');
-            const { createTimeline } = module;
-            timelineContainer.innerHTML = '';
-            timeline = createTimeline('timelineContainer', {
-                maxTime: 5,
-                onTimeChange: (time) => {
-                    // Solo actualizar el projectManager cuando el cambio viene del timeline (arrastre, reproducción)
-                    project.setCurrentTime(time);
-                },
-                onKeyframeAdd: (time) => { project.addKeyframe(time); },
-                onKeyframeMove: (index, newTime) => { project.clearKeyframes(); timeline.getKeyframes().forEach(kf => project.addKeyframe(kf.time)); },
-                onKeyframeRemove: (index, removedTime) => { project.clearKeyframes(); timeline.getKeyframes().forEach(kf => project.addKeyframe(kf.time)); }
-            });
-            // Sincronizar desde project hacia timeline (para animación) SIN causar recursión
-            project.setOnTimeUpdate((time) => {
-                if (timeline) timeline.updatePlayheadOnly(time);
-            });
-            timeline.updateTranslations = (lang) => {
-                const header = timelineContainer.querySelector('.timeline-header span:first-child');
-                if (header) header.innerText = t('timelineHeader');
-                const addBtn = timelineContainer.querySelector('#timelineAddBtn');
-                if (addBtn) addBtn.innerText = t('addKeyframe');
-                const playBtn = timelineContainer.querySelector('#timelinePlayBtn');
-                if (playBtn) playBtn.innerText = t('play');
-                const stopBtn = timelineContainer.querySelector('#timelineStopBtn');
-                if (stopBtn) stopBtn.innerText = t('stop');
-            };
-            timeline.updateTranslations(currentLang);
-        } catch (error) {
-            console.error(error);
-            timelineContainer.innerHTML = `<div class="loading-indicator" style="color:#e74c3c;">❌ Error loading timeline</div>`;
-        }
-    }
+        const fps = 30;
+        const width = 1280;
+        const height = 720;
+        const realDuration = duration / speed;
 
-    // ==================== PANEL FLOTANTE LECCIONES ====================
-    const lessonFloatPanel = document.getElementById('lessonFloatPanel');
-    const lessonFloatTitle = document.getElementById('lessonFloatTitle');
-    const lessonFloatContent = document.getElementById('lessonFloatContent');
-    const closeLessonFloat = document.getElementById('closeLessonFloat');
-    const lessonPagination = document.getElementById('lessonPagination');
-    const openLessonsBtn = document.getElementById('openLessonsBtn');
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const offscreenRenderer = new THREE.WebGLRenderer({ canvas, preserveDrawingBuffer: true, alpha: false });
+        offscreenRenderer.setSize(width, height);
+        offscreenRenderer.setClearColor(0x000000);
+        offscreenRenderer.setPixelRatio(1);
 
-    function updateLessonPanelContent() {
-        const lesson = lessons[currentLessonIndex];
-        const titleText = currentLang === 'es' ? lesson.title.es : lesson.title.en;
-        const descText = currentLang === 'es' ? lesson.description.es : lesson.description.en;
-        lessonFloatTitle.innerText = titleText;
-        lessonFloatContent.innerHTML = `
-            <h4>${titleText}</h4>
-            <p>${descText}</p>
-            ${lesson.content ? `<div>${lesson.content}</div>` : ''}
-            <div id="lessonValidationStatus" style="margin-top:12px; padding:6px; background:#1a252f; border-radius:6px;"></div>
-        `;
-        updateLessonValidationStatus();
-        lessonPagination.innerHTML = `
-            <button id="prevLessonBtn" ${currentLessonIndex === 0 ? 'disabled' : ''}>${t('prevLesson')}</button>
-            <span style="margin:0 10px;">${currentLessonIndex+1} / ${lessons.length}</span>
-            <button id="nextLessonBtn" ${currentLessonIndex === lessons.length-1 ? 'disabled' : ''}>${t('nextLesson')}</button>
-        `;
-        document.getElementById('prevLessonBtn')?.addEventListener('click', () => { if (currentLessonIndex > 0) { currentLessonIndex--; updateLessonPanelContent(); } });
-        document.getElementById('nextLessonBtn')?.addEventListener('click', () => { if (currentLessonIndex < lessons.length-1) { currentLessonIndex++; updateLessonPanelContent(); } });
-    }
-    function updateLessonValidationStatus() {
-        const lesson = lessons[currentLessonIndex];
-        if (!lesson.validate) return;
-        try {
-            const selectedObj = scene3D.getSelectedObject()?.mesh;
-            const sceneObjects = scene3D.getAllMeshes();
-            const validateFn = new Function('selectedObject', 'sceneObjects', 'return (' + lesson.validate + ')');
-            const isValid = validateFn(selectedObj, sceneObjects);
-            const statusDiv = document.getElementById('lessonValidationStatus');
-            if (statusDiv) {
-                statusDiv.innerHTML = isValid ? `<span style="color:#2ecc71;">${t('lessonCompleted')}</span>` : `<span style="color:#e67e22;">⏳ ${t('lessonActive')} ${currentLang === 'es' ? lesson.title.es : lesson.title.en}</span>`;
-            }
-        } catch(e) { console.warn(e); }
-    }
-    openLessonsBtn.addEventListener('click', () => { updateLessonPanelContent(); lessonFloatPanel.style.display = 'block'; lessonFloatPanel.style.left = '150px'; lessonFloatPanel.style.top = '100px'; });
-    closeLessonFloat.addEventListener('click', () => { lessonFloatPanel.style.display = 'none'; });
-    // Arrastre panel lecciones
-    let isDraggingLesson = false, lessonDragOffsetX = 0, lessonDragOffsetY = 0;
-    const lessonFloatHeader = document.getElementById('lessonFloatHeader');
-    lessonFloatHeader.addEventListener('mousedown', (e) => {
-        if (e.target === closeLessonFloat) return;
-        isDraggingLesson = true;
-        lessonDragOffsetX = e.clientX - lessonFloatPanel.offsetLeft;
-        lessonDragOffsetY = e.clientY - lessonFloatPanel.offsetTop;
-        lessonFloatPanel.style.cursor = 'grabbing';
-        e.preventDefault();
-    });
-    window.addEventListener('mousemove', (e) => {
-        if (!isDraggingLesson) return;
-        lessonFloatPanel.style.left = (e.clientX - lessonDragOffsetX) + 'px';
-        lessonFloatPanel.style.top = (e.clientY - lessonDragOffsetY) + 'px';
-    });
-    window.addEventListener('mouseup', () => { isDraggingLesson = false; lessonFloatPanel.style.cursor = 'default'; });
+        const tempCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        const stream = canvas.captureStream(fps);
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        const chunks = [];
 
-    // ==================== RESTO APLICACIÓN ====================
-    let currentSelectedId = null;
-    let undoStack = [], redoStack = [], isUndoRedo = false, clipboardData = null;
-    
-    // DOM
-    const objectListEl = document.getElementById('objectList');
-    const propertiesPanel = document.getElementById('propertiesPanel');
-    const propContent = document.getElementById('propContent');
-    const loadModelBtn = document.getElementById('loadModelBtn');
-    const exportSTLBtn = document.getElementById('exportSTL');
-    const exportGLTFBtn = document.getElementById('exportGLTF');
-    const exportOBJBtn = document.getElementById('exportOBJ');
-    const importModelBtn = document.getElementById('importModel');
-    const resetCameraBtn = document.getElementById('resetCamera');
-    const toggleGridBtn = document.getElementById('toggleGrid');
-    const newProjectBtn = document.getElementById('newProject');
-    const effectsBtnUI = document.getElementById('effectsBtn');
-    const dropdownEditarUI = document.getElementById('dropdownEditar');
-    const dropdownInsertarUI = document.getElementById('dropdownInsertar');
-    const customTextureInputUI = document.getElementById('customTextureInput');
-
-    // Funciones de UI
-    function openPropertiesPanel() { if (!propertiesPanel.classList.contains('open')) propertiesPanel.classList.add('open'); }
-    function closePropertiesPanel() { propertiesPanel.classList.remove('open'); }
-    function showLoadingInProperties() { propContent.innerHTML = '<div class="loading-indicator">⏳ Cargando propiedades...</div>'; openPropertiesPanel(); }
-
-    async function buildPropertiesHTML(props) {
-        await new Promise(resolve => setTimeout(resolve, 150));
-        const textureOptions = ['none', 'grid', 'brick', 'stone', 'wood', 'metal', 'marble', 'grass'];
-        let textureSelect = '<select id="objTexture">';
-        textureOptions.forEach(opt => { textureSelect += `<option value="${opt}" ${props.texture===opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase()+opt.slice(1)}</option>`; });
-        textureSelect += '</select>';
-        return `
-            <div class="prop-group"><label>Nombre</label><input type="text" id="objName" value="${props.name}"></div>
-            <div class="prop-group"><label>Color</label><input type="color" id="objColor" value="#${props.color.toString(16).padStart(6,'0')}"></div>
-            <div class="prop-group"><label>Textura</label>${textureSelect}<div class="texture-preview" id="texturePreview" style="background-image:url('${getTexturePreview(props.texture)}');"></div></div>
-            <div class="prop-group"><label>Posición</label><div><input type="number" step="0.1" id="posX" value="${props.position.x}"><input type="number" step="0.1" id="posY" value="${props.position.y}"><input type="number" step="0.1" id="posZ" value="${props.position.z}"></div></div>
-            <div class="prop-group"><label>Escala</label><div><input type="number" step="0.1" id="scaleX" value="${props.scale.x}"><input type="number" step="0.1" id="scaleY" value="${props.scale.y}"><input type="number" step="0.1" id="scaleZ" value="${props.scale.z}"></div></div>
-            <div class="prop-group"><label>Rotación (rad)</label><div><input type="number" step="0.1" id="rotX" value="${props.rotation.x}"><input type="number" step="0.1" id="rotY" value="${props.rotation.y}"><input type="number" step="0.1" id="rotZ" value="${props.rotation.z}"></div></div>
-        `;
-    }
-
-    function updateObjectPropertyWithUndo(prop, value) {
-        const obj = scene3D.getSelectedObject();
-        if (obj && !isUndoRedo) {
-            const oldProps = scene3D.getSelectedObjectProperties();
-            const oldValue = oldProps ? oldProps[prop] : undefined;
-            scene3D.updateSelectedObjectProperty(prop, value);
-            if (oldValue !== value) recordAction({ undo: () => scene3D.updateSelectedObjectProperty(prop, oldValue), redo: () => scene3D.updateSelectedObjectProperty(prop, value) });
-        } else {
-            scene3D.updateSelectedObjectProperty(prop, value);
-        }
-    }
-
-    async function showProperties(objectId) {
-        if (!objectId) { propContent.innerHTML = '<p style="color:#aaa;">Selecciona un objeto</p>'; closePropertiesPanel(); return; }
-        showLoadingInProperties();
-        const props = scene3D.getSelectedObjectProperties();
-        if (!props) { propContent.innerHTML = '<p style="color:#aaa;">No se pudieron cargar las propiedades</p>'; return; }
-        const html = await buildPropertiesHTML(props);
-        propContent.innerHTML = html;
-        document.getElementById('objName').onchange = (e) => { scene3D.getSelectedObject().name = e.target.value; updateObjectList(); };
-        document.getElementById('objColor').oninput = (e) => updateObjectPropertyWithUndo('color', e.target.value);
-        const texSel = document.getElementById('objTexture');
-        texSel.onchange = (e) => { updateObjectPropertyWithUndo('texture', e.target.value === 'none' ? null : e.target.value); document.getElementById('texturePreview').style.backgroundImage = `url('${getTexturePreview(e.target.value)}')`; };
-        document.getElementById('posX').onchange = (e) => updateObjectPropertyWithUndo('position', { x: parseFloat(e.target.value), y: props.position.y, z: props.position.z });
-        document.getElementById('posY').onchange = (e) => updateObjectPropertyWithUndo('position', { x: props.position.x, y: parseFloat(e.target.value), z: props.position.z });
-        document.getElementById('posZ').onchange = (e) => updateObjectPropertyWithUndo('position', { x: props.position.x, y: props.position.y, z: parseFloat(e.target.value) });
-        document.getElementById('scaleX').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: parseFloat(e.target.value), y: props.scale.y, z: props.scale.z });
-        document.getElementById('scaleY').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: props.scale.x, y: parseFloat(e.target.value), z: props.scale.z });
-        document.getElementById('scaleZ').onchange = (e) => updateObjectPropertyWithUndo('scale', { x: props.scale.x, y: props.scale.y, z: parseFloat(e.target.value) });
-        document.getElementById('rotX').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: parseFloat(e.target.value), y: props.rotation.y, z: props.rotation.z });
-        document.getElementById('rotY').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: props.rotation.x, y: parseFloat(e.target.value), z: props.rotation.z });
-        document.getElementById('rotZ').onchange = (e) => updateObjectPropertyWithUndo('rotation', { x: props.rotation.x, y: props.rotation.y, z: parseFloat(e.target.value) });
-    }
-
-    function getTexturePreview(key) {
-        const previews = {
-            grid: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23444"/%3E%3Crect width="50" height="50" fill="%23aaa"/%3E%3Crect x="50" y="50" width="50" height="50" fill="%23aaa"/%3E%3C/svg%3E',
-            brick: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23b85c1a"/%3E%3Crect x="0" y="0" width="45" height="20" fill="%23a04010"/%3E%3Crect x="50" y="0" width="45" height="20" fill="%23a04010"/%3E%3Crect x="25" y="25" width="45" height="20" fill="%23a04010"/%3E%3C/svg%3E',
-            stone: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23888"/%3E%3Ccircle cx="20" cy="30" r="5" fill="%23666"/%3E%3Ccircle cx="70" cy="50" r="6" fill="%23666"/%3E%3Ccircle cx="40" cy="80" r="4" fill="%23666"/%3E%3C/svg%3E',
-            wood: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%238B5A2B"/%3E%3Cpath d="M0,20 L100,25 M0,50 L100,55 M0,80 L100,85" stroke="%23402010" stroke-width="3"/%3E%3C/svg%3E',
-            metal: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" y1="0" x2="1" y2="1"%3E%3Cstop offset="0" stop-color="%23C0C0C0"/%3E%3Cstop offset="1" stop-color="%23808080"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="100" height="100" fill="url(%23g)"/%3E%3C/svg%3E',
-            marble: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23e0e0e0"/%3E%3Cpath d="M10,10 L30,30 M40,20 L60,40 M70,30 L90,50" stroke="%23999" stroke-width="2" fill="none"/%3E%3C/svg%3E',
-            grass: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%234caf50"/%3E%3Cpath d="M0,50 L20,30 L40,55 L60,25 L80,60 L100,40 L100,100 L0,100 Z" fill="%23388e3c"/%3E%3C/svg%3E'
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `animacion_${Date.now()}.webm`;
+            a.click();
+            URL.revokeObjectURL(url);
+            offscreenRenderer.dispose();
+            gridGroup.visible = originalGridVisible;
+            cameraMesh.visible = originalCameraVisible;
+            if (onProgress) onProgress(100);
+            console.log("✅ Exportación terminada");
         };
-        return previews[key] || '';
+
+        mediaRecorder.start();
+        const totalFrames = Math.ceil(realDuration * fps);
+
+        for (let frame = 0; frame <= totalFrames; frame++) {
+            const tReal = frame / fps;
+            const tAnim = Math.min(duration, tReal * speed);
+            setCurrentTime(tAnim);
+
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(cameraMesh.quaternion);
+            const lensOffset = new THREE.Vector3(0, 0.1, 0.45).applyQuaternion(cameraMesh.quaternion);
+            tempCamera.position.copy(cameraMesh.position.clone().add(lensOffset));
+            tempCamera.lookAt(cameraMesh.position.clone().add(forward.multiplyScalar(2)));
+
+            offscreenRenderer.render(scene, tempCamera);
+            await new Promise(r => requestAnimationFrame(r));
+
+            if (onProgress) {
+                const percent = (frame / totalFrames) * 100;
+                onProgress(percent);
+            }
+        }
+        mediaRecorder.stop();
     }
 
-    function updateObjectList() {
-        const objects = scene3D.getObjectList();
-        objectListEl.innerHTML = '';
-        if (!objects || objects.length === 0) {
-            const emptyMsg = document.createElement('li'); emptyMsg.textContent = 'No hay objetos'; emptyMsg.style.cssText = 'color:#aaa; text-align:center; padding:8px;';
-            objectListEl.appendChild(emptyMsg); closePropertiesPanel(); return;
+    // ==================== GESTIÓN DE PROYECTOS CON ZIP ====================
+    async function exportProjectToZip() {
+        const sceneData = await captureProjectData();
+        const zip = new JSZip();
+        zip.file("project.json", JSON.stringify(sceneData, null, 2));
+        const logContent = `Proyecto 3DBuilder\nFecha: ${new Date().toISOString()}\nObjetos: ${objects.length}\nKeyframes totales: ${Object.keys(loadAllKeyframes()).reduce((acc,k)=>acc+loadAllKeyframes()[k].length,0)}\n`;
+        zip.file("info.log", logContent);
+        for (let obj of objects) {
+            if (obj.type === 'imported' && obj.originalFileData) {
+                const ext = obj.modelFormat || 'gltf';
+                const filename = `models/${obj.name}.${ext}`;
+                let fileData = obj.originalFileData;
+                if (fileData instanceof File) fileData = await fileData.arrayBuffer();
+                zip.file(filename, fileData);
+            }
         }
+        const blob = await zip.generateAsync({ type: "blob" });
+        saveAs(blob, `proyecto_3dbuilder_${Date.now()}.zip`);
+        showCustomAlert("Proyecto exportado a ZIP correctamente.");
+    }
+
+    async function importProjectFromZip(file) {
+        const zip = await JSZip.loadAsync(file);
+        const projectJsonFile = zip.file("project.json");
+        if (!projectJsonFile) throw new Error("No se encontró project.json en el ZIP");
+        const projectData = JSON.parse(await projectJsonFile.async("string"));
+        await restoreProjectData(projectData);
+        
+        const missingModels = [];
+        for (let obj of objects) {
+            if (obj.type === 'imported' && obj.modelRef && !zip.file(obj.modelRef)) {
+                missingModels.push({ name: obj.name, ref: obj.modelRef, obj });
+            }
+        }
+        if (missingModels.length > 0) {
+            await showMissingModelsDialog(missingModels, zip);
+        }
+        showCustomAlert("Proyecto importado correctamente.");
+    }
+
+    async function showMissingModelsDialog(missingModels, zip) {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'custom-modal';
+            modal.style.display = 'block';
+            modal.style.position = 'fixed';
+            modal.style.zIndex = '10001';
+            modal.innerHTML = `
+                <div class="title">Modelos faltantes</div>
+                <div class="content" style="max-height: 400px;">
+                    <p>Los siguientes modelos no se encontraron en el ZIP. Selecciona archivos de reemplazo (o cancela para usar el placeholder):</p>
+                    <ul id="missingModelsList" style="list-style:none; padding:0;"></ul>
+                </div>
+                <div><button id="okMissingBtn">Continuar</button></div>
+            `;
+            document.body.appendChild(modal);
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.display = 'block';
+            document.body.appendChild(overlay);
+            
+            const listContainer = modal.querySelector('#missingModelsList');
+            const fileInputs = [];
+            for (let i = 0; i < missingModels.length; i++) {
+                const mm = missingModels[i];
+                const li = document.createElement('li');
+                li.style.margin = '10px 0';
+                li.innerHTML = `<strong>${mm.name}</strong> (${mm.ref})<br><input type="file" accept=".gltf,.glb,.obj,.stl" id="file_${i}">`;
+                listContainer.appendChild(li);
+                fileInputs.push({ index: i, input: li.querySelector('input'), model: mm });
+            }
+            modal.querySelector('#okMissingBtn').onclick = async () => {
+                for (let fi of fileInputs) {
+                    if (fi.input.files.length > 0) {
+                        const file = fi.input.files[0];
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        const loader = getLoaderByExtension(ext);
+                        if (loader) {
+                            const url = URL.createObjectURL(file);
+                            const loaded = await new Promise((resolve, reject) => {
+                                loader.load(url, (result) => {
+                                    URL.revokeObjectURL(url);
+                                    let model;
+                                    if (result.scene) model = result.scene;
+                                    else if (result instanceof THREE.Group) model = result;
+                                    else if (result instanceof THREE.BufferGeometry) model = new THREE.Mesh(result, new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+                                    else model = result;
+                                    resolve(model);
+                                }, undefined, reject);
+                            });
+                            const oldMesh = fi.model.obj.mesh;
+                            scene.remove(oldMesh);
+                            fi.model.obj.mesh = loaded;
+                            fi.model.obj.mesh.userData = oldMesh.userData;
+                            fi.model.obj.mesh.position.copy(oldMesh.position);
+                            fi.model.obj.mesh.rotation.copy(oldMesh.rotation);
+                            fi.model.obj.mesh.scale.copy(oldMesh.scale);
+                            scene.add(fi.model.obj.mesh);
+                            if (selectedObjectId === fi.model.obj.id) transformControls.attach(fi.model.obj.mesh);
+                        }
+                    }
+                }
+                document.body.removeChild(modal);
+                document.body.removeChild(overlay);
+                resolve();
+            };
+        });
+    }
+
+    function getLoaderByExtension(ext) {
+        if (ext === 'gltf' || ext === 'glb') return new GLTFLoader();
+        if (ext === 'obj') return new OBJLoader();
+        if (ext === 'stl') return new STLLoader();
+        return null;
+    }
+
+    async function captureProjectData() {
+        const sceneData = {
+            objects: [],
+            keyframesGlobal: loadAllKeyframes(),
+            currentTime: currentTime,
+            maxTime: config.maxTime
+        };
+        for (let obj of objects) {
+            const objData = {
+                id: obj.id, name: obj.name, type: obj.type,
+                position: obj.mesh.position.toArray(),
+                rotation: obj.mesh.rotation.toArray(),
+                scale: obj.mesh.scale.toArray(),
+                material: null, textureData: null, modelRef: null
+            };
+            if (obj.mesh.material) {
+                const mat = obj.mesh.material;
+                objData.material = {
+                    color: mat.color.getHex(), metalness: mat.metalness, roughness: mat.roughness,
+                    emissive: mat.emissive.getHex(), opacity: mat.opacity, transparent: mat.transparent
+                };
+                if (mat.map && mat.map.image && mat.map.image.src && mat.map.image.src.startsWith('data:'))
+                    objData.textureData = mat.map.image.src;
+            }
+            if (obj.type === 'imported' && obj.originalFileData) {
+                const ext = obj.modelFormat || 'gltf';
+                objData.modelRef = `models/${obj.name}.${ext}`;
+            }
+            sceneData.objects.push(objData);
+        }
+        return sceneData;
+    }
+
+    async function restoreProjectData(projectData) {
+        for (let obj of [...objects]) removeObject(obj.id);
+        importKeyframes(projectData.keyframesGlobal);
+        for (let objData of projectData.objects) {
+            let mesh = null;
+            if (objData.type === 'cube') {
+                const geometry = new THREE.BoxGeometry(1,1,1);
+                const material = new THREE.MeshStandardMaterial(objData.material || { color: 0x5f91d7, metalness: 0.7 });
+                if (objData.textureData) {
+                    const img = new Image();
+                    img.onload = () => { material.map = new THREE.CanvasTexture(img); material.needsUpdate = true; };
+                    img.src = objData.textureData;
+                }
+                mesh = new THREE.Mesh(geometry, material);
+            } else if (objData.type === 'sphere') {
+                const geometry = new THREE.SphereGeometry(0.5,32,32);
+                mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(objData.material || { color: 0x5f91d7 }));
+            } else if (objData.type === 'cylinder') {
+                const geometry = new THREE.CylinderGeometry(0.5,0.5,1,32);
+                mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(objData.material || { color: 0x5f91d7 }));
+            } else if (objData.type === 'cone') {
+                const geometry = new THREE.ConeGeometry(0.5,1,32);
+                mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(objData.material || { color: 0x5f91d7 }));
+            } else if (objData.type === 'torus') {
+                const geometry = new THREE.TorusGeometry(0.5,0.2,32,64);
+                mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(objData.material || { color: 0x5f91d7 }));
+            } else if (objData.type === 'camera') {
+                const group = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.8), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                body.position.y = 0;
+                const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.1,16), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                lens.rotation.x = Math.PI/2; lens.position.z = 0.45; lens.position.y = 0.1;
+                const top = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.1,0.4), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+                top.position.y = 0.25;
+                group.add(body, lens, top);
+                mesh = group;
+            } else if (objData.type === 'light') {
+                mesh = new THREE.PointLight(0xffffff, 1);
+            } else if (objData.type === 'imported') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), new THREE.MeshStandardMaterial({ color: 0xff00ff }));
+            }
+            if (mesh) {
+                mesh.position.fromArray(objData.position);
+                mesh.rotation.fromArray(objData.rotation);
+                mesh.scale.fromArray(objData.scale);
+                addObject(mesh, objData.name, objData.type);
+                if (objData.type === 'camera') mesh.type = 'camera';
+                if (objData.type === 'imported' && objData.modelRef) {
+                    const objRef = objects.find(o => o.id === mesh.userData.id);
+                    objRef.modelRef = objData.modelRef;
+                }
+                if (objData.material && mesh.material) {
+                    mesh.material.color.setHex(objData.material.color);
+                    mesh.material.metalness = objData.material.metalness;
+                    mesh.material.roughness = objData.material.roughness;
+                    mesh.material.emissive.setHex(objData.material.emissive);
+                    mesh.material.opacity = objData.material.opacity;
+                    mesh.material.transparent = objData.material.transparent;
+                }
+            }
+        }
+        recalcMaxTime();
+        setCurrentTime(projectData.currentTime);
+        updateTimelineUI();
+    }
+
+    // ==================== KF-BACKEND (keyframes) ====================
+    const STORAGE_KEY = 'listaKeyframesCodes';
+    function generateCode() { return Math.random().toString(36).substr(2, 5); }
+    function loadAllKeyframes() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : {};
+    }
+    function saveAllKeyframes(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function getKeyframes(objectName) {
+        const all = loadAllKeyframes();
+        return all[objectName] || [];
+    }
+    function addKeyframe(objectName, time, position, rotation) {
+        const all = loadAllKeyframes();
+        if (!all[objectName]) all[objectName] = [];
+        let code;
+        do { code = generateCode(); } while (all[objectName].some(kf => kf.code === code));
+        const newKeyframe = {
+            code, time,
+            pos: { x: position.x, y: position.y, z: position.z },
+            rot: { x: rotation.x, y: rotation.y, z: rotation.z }
+        };
+        all[objectName].push(newKeyframe);
+        all[objectName].sort((a,b) => a.time - b.time);
+        saveAllKeyframes(all);
+        recalcMaxTime();
+        return code;
+    }
+    function removeKeyframe(objectName, code) {
+        const all = loadAllKeyframes();
+        if (!all[objectName]) return false;
+        all[objectName] = all[objectName].filter(kf => kf.code !== code);
+        if (all[objectName].length === 0) delete all[objectName];
+        saveAllKeyframes(all);
+        recalcMaxTime();
+        return true;
+    }
+    function deleteAllKeyframes(objectName) {
+        const all = loadAllKeyframes();
+        if (objectName === "all") {
+            for (let key in all) delete all[key];
+        } else {
+            delete all[objectName];
+        }
+        saveAllKeyframes(all);
+        recalcMaxTime();
+    }
+    function importKeyframes(data) { saveAllKeyframes(data); recalcMaxTime(); }
+
+    // ==================== ESCENA 3D ====================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1c1c24);
+    scene.fog = new THREE.FogExp2(0x1c1c24, 0.008);
+    const mainCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    mainCamera.position.set(8, 6, 12);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.zIndex = '0';
+
+    const controls = new OrbitControls(mainCamera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.8;
+    controls.target.set(0, 0, 0);
+
+    const transformControls = new TransformControls(mainCamera, renderer.domElement);
+    transformControls.addEventListener('dragging-changed', (event) => { controls.enabled = !event.value; });
+    scene.add(transformControls);
+
+    // Iluminación
+    const ambientLight = new THREE.AmbientLight(0x404060);
+    scene.add(ambientLight);
+    const keyLight = new THREE.DirectionalLight(0xfff5e0, 1);
+    keyLight.position.set(5, 10, 7);
+    keyLight.castShadow = true;
+    scene.add(keyLight);
+    const fillLight = new THREE.PointLight(0x4466cc, 0.5);
+    fillLight.position.set(-4, 2, 5);
+    scene.add(fillLight);
+    const rimLight = new THREE.PointLight(0xffaa66, 0.6);
+    rimLight.position.set(2, 3, -6);
+    scene.add(rimLight);
+    const bottomLight = new THREE.PointLight(0x88aaff, 0.3);
+    bottomLight.position.set(0, -3, 0);
+    scene.add(bottomLight);
+
+    // Rejilla infinita
+    let gridGroup = new THREE.Group();
+    scene.add(gridGroup);
+    const gridStep = 1;
+    const gridSize = 30;
+    let lastCameraX = 0, lastCameraZ = 0;
+    function updateDynamicGrid() {
+        const camX = Math.floor(mainCamera.position.x / gridStep) * gridStep;
+        const camZ = Math.floor(mainCamera.position.z / gridStep) * gridStep;
+        if (camX === lastCameraX && camZ === lastCameraZ) return;
+        lastCameraX = camX; lastCameraZ = camZ;
+        gridGroup.clear();
+        for (let i = -gridSize; i <= gridSize; i++) {
+            const z = camZ + i * gridStep;
+            const color = (Math.abs(z) % 5 === 0) ? 0x88aaff : 0x335588;
+            const points = [];
+            for (let x = -gridSize; x <= gridSize; x++) points.push(new THREE.Vector3(camX + x * gridStep, 0, z));
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color }));
+            gridGroup.add(line);
+        }
+        for (let i = -gridSize; i <= gridSize; i++) {
+            const x = camX + i * gridStep;
+            const color = (Math.abs(x) % 5 === 0) ? 0x88aaff : 0x335588;
+            const points = [];
+            for (let z = -gridSize; z <= gridSize; z++) points.push(new THREE.Vector3(x, 0, camZ + z * gridStep));
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color }));
+            gridGroup.add(line);
+        }
+        const axisHelper = new THREE.AxesHelper(5);
+        axisHelper.position.set(camX, 0, camZ);
+        gridGroup.add(axisHelper);
+    }
+    function toggleGridVisibility() { gridGroup.visible = !gridGroup.visible; }
+
+    // Raycaster
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    renderer.domElement.addEventListener('click', (event) => {
+        mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+        mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, mainCamera);
+        const intersects = raycaster.intersectObjects(objects.map(obj => obj.mesh), true);
+        if (intersects.length > 0) {
+            let hit = intersects[0].object;
+            while (hit && !objects.some(obj => obj.mesh === hit)) hit = hit.parent;
+            if (hit && objects.some(obj => obj.mesh === hit)) {
+                const obj = objects.find(o => o.mesh === hit);
+                if (obj) selectObject(obj.id);
+            }
+        }
+    });
+
+    // ==================== GESTIÓN DE OBJETOS 3D ====================
+    let objects = [];
+    let selectedObjectId = null;
+    let objectCounter = 0;
+
+    function createObjectTrack(objMesh, objectName) {
+        let keyframes = [];
+        const saved = getKeyframes(objectName);
+        if (saved.length) {
+            keyframes = saved.map(kf => ({
+                code: kf.code,
+                time: kf.time,
+                pos: new THREE.Vector3(kf.pos.x, kf.pos.y, kf.pos.z),
+                rot: new THREE.Euler(kf.rot.x, kf.rot.y, kf.rot.z, 'XYZ')
+            }));
+        }
+        return {
+            getTransform: () => ({ pos: objMesh.position.clone(), rot: objMesh.rotation.clone() }),
+            setTransform: (pos, rot) => { objMesh.position.copy(pos); objMesh.rotation.copy(rot); },
+            addKeyframe: async (time, pos, rot) => {
+                const code = addKeyframe(objectName, time, pos, rot);
+                const newKeyframe = { code, time, pos: pos.clone(), rot: rot.clone() };
+                keyframes.push(newKeyframe);
+                keyframes.sort((a,b) => a.time - b.time);
+            },
+            interpolate: (time) => {
+                let prev = null, next = null;
+                for (let k of keyframes) { if (k.time <= time) prev = k; if (k.time >= time && !next) next = k; }
+                if (!prev && keyframes.length) prev = keyframes[0];
+                if (!next && keyframes.length) next = keyframes[keyframes.length-1];
+                if (!prev || !next) return null;
+                if (prev.time === next.time) return { pos: prev.pos, rot: prev.rot };
+                const t = (time - prev.time) / (next.time - prev.time);
+                const pos = prev.pos.clone().lerp(next.pos, t);
+                const prevQuat = new THREE.Quaternion().setFromEuler(prev.rot);
+                const nextQuat = new THREE.Quaternion().setFromEuler(next.rot);
+                prevQuat.slerp(nextQuat, t);
+                const rot = new THREE.Euler().setFromQuaternion(prevQuat, 'XYZ');
+                return { pos, rot };
+            },
+            keyframes
+        };
+    }
+
+    function addObject(mesh, name, type) {
+        mesh.castShadow = true;
+        mesh.userData = { id: objectCounter++, name, type };
+        scene.add(mesh);
+        objects.push({ id: mesh.userData.id, name, mesh, type });
+        if (typeof addTrackToTimeline === 'function') addTrackToTimeline(name, mesh);
+        return mesh.userData.id;
+    }
+
+    function removeObject(id) {
+        const obj = objects.find(o => o.id === id);
+        if (!obj) return;
+        if (selectedObjectId === id) { transformControls.detach(); selectedObjectId = null; }
+        deleteAllKeyframes(obj.name);
+        scene.remove(obj.mesh);
+        objects = objects.filter(o => o.id !== id);
+        if (typeof removeTrackFromTimeline === 'function') removeTrackFromTimeline(obj.name);
+        updateObjectListUI();
+        if (selectedObjectId === null) closePropertiesPanel();
+        updateKeyframeListUI();
+        if (obj.particleSystem) {
+            scene.remove(obj.particleSystem);
+            if (obj.particleUpdate) cancelAnimationFrame(obj.particleUpdate);
+        }
+        if (obj.type === 'camera' && currentPreviewCameraObj === obj.mesh) {
+            document.getElementById("cameraFloatPanel").classList.remove("active");
+            currentPreviewCameraObj = null;
+        }
+    }
+
+    function selectObject(id) {
+        if (selectedObjectId === id) {
+            selectedObjectId = null;
+            transformControls.detach();
+            closePropertiesPanel();
+            updateObjectListUI();
+            updateKeyframeListUI();
+            return;
+        }
+        selectedObjectId = id;
+        const obj = objects.find(o => o.id === id);
+        if (obj) transformControls.attach(obj.mesh);
+        else transformControls.detach();
+        updateObjectListUI();
+        showProperties(id);
+        updateKeyframeListUI();
+        if (obj && obj.type === 'camera') {
+            startCameraPreview(obj.mesh);
+        } else {
+            document.getElementById("cameraFloatPanel").classList.remove("active");
+            if (previewAnimationId) cancelAnimationFrame(previewAnimationId);
+            currentPreviewCameraObj = null;
+        }
+    }
+
+    // ==================== TIMELINE UI (con maxTime dinámico) ====================
+    let tracks = [];
+    let currentTime = 0;
+    let isPlaying = false;
+    let config = { maxTime: 5, speed: 1 };
+    const container = document.getElementById('timelineContainer');
+    let animationFrameId = null;
+
+    function recalcMaxTime() {
+        let maxTime = 0;
+        for (let track of tracks) {
+            for (let kf of track.trackObject.keyframes) {
+                if (kf.time > maxTime) maxTime = kf.time;
+            }
+        }
+        config.maxTime = Math.max(0.1, maxTime);
+        if (config.maxTime === 0.1 && tracks.length === 0) config.maxTime = 5;
+        updateTimelineUI();
+    }
+
+    function drawRuler() {
+        const rulerDiv = container.querySelector('.timeline-ruler');
+        if (!rulerDiv) return;
+        const width = rulerDiv.clientWidth;
+        if (width === 0) { setTimeout(drawRuler, 50); return; }
+        rulerDiv.innerHTML = '';
+        const max = config.maxTime;
+        const step = Math.ceil(max / 10);
+        for (let i = 0; i <= max; i += step) {
+            const left = (i / max) * width;
+            const mark = document.createElement('div');
+            mark.style.position = 'absolute';
+            mark.style.left = `${left}px`;
+            mark.style.bottom = '0';
+            mark.style.width = '1px';
+            mark.style.height = '10px';
+            mark.style.background = '#aaa';
+            const label = document.createElement('span');
+            label.innerText = i + 's';
+            label.style.position = 'absolute';
+            label.style.left = `${left}px`;
+            label.style.bottom = '12px';
+            label.style.fontSize = '10px';
+            label.style.color = '#ccc';
+            rulerDiv.appendChild(mark);
+            rulerDiv.appendChild(label);
+        }
+    }
+
+    function updateTimelineUI() {
+        drawRuler();
+        const tracksDiv = container.querySelector('.timeline-tracks');
+        if (!tracksDiv) return;
+        tracksDiv.innerHTML = '';
+        tracks.forEach(track => {
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'timeline-track';
+            const label = document.createElement('div');
+            label.className = 'track-label';
+            label.innerText = track.name;
+            trackDiv.appendChild(label);
+            const keyframes = track.trackObject.keyframes || [];
+            const width = trackDiv.clientWidth;
+            if (width > 0 && config.maxTime > 0) {
+                keyframes.forEach(kf => {
+                    const left = (kf.time / config.maxTime) * width;
+                    const marker = document.createElement('div');
+                    marker.className = 'keyframe-marker';
+                    marker.style.left = `${left}px`;
+                    marker.style.top = '50%';
+                    trackDiv.appendChild(marker);
+                });
+            }
+            tracksDiv.appendChild(trackDiv);
+        });
+        const playhead = document.createElement('div');
+        playhead.className = 'playhead';
+        const width = tracksDiv.clientWidth;
+        if (width > 0 && config.maxTime > 0) playhead.style.left = (currentTime / config.maxTime) * width + 'px';
+        tracksDiv.appendChild(playhead);
+        const globalSpan = container.querySelector('#globalTime');
+        if (globalSpan) globalSpan.innerText = currentTime.toFixed(2) + 's';
+        updateKeyframeListUI();
+    }
+
+    function updateKeyframeListUI() {
+        const contentDiv = document.getElementById('keyframeListContent');
+        if (!contentDiv) return;
+        const selectedObj = objects.find(o => o.id === selectedObjectId);
+        if (!selectedObj) {
+            contentDiv.innerHTML = '<div style="font-size:10px; text-align:center;" data-i18n="selectObjectKeyframeMsg">Selecciona un objeto</div>';
+            return;
+        }
+        const track = tracks.find(t => t.name === selectedObj.name);
+        if (!track || !track.trackObject.keyframes.length) {
+            contentDiv.innerHTML = '<div style="font-size:10px; text-align:center;" data-i18n="noKeyframesMsg">Sin keyframes</div>';
+            return;
+        }
+        const kfs = [...track.trackObject.keyframes];
+        contentDiv.innerHTML = '';
+        kfs.forEach((kf) => {
+            const item = document.createElement('div');
+            item.className = 'keyframe-list-item';
+            item.innerHTML = `<span>${kf.time.toFixed(2)}s (${kf.code})</span><button class="del-keyframe" data-code="${kf.code}" style="background:#e74c3c; border:none; color:white; border-radius:3px; cursor:pointer;">✖</button>`;
+            const delBtn = item.querySelector('.del-keyframe');
+            delBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const code = delBtn.getAttribute('data-code');
+                removeKeyframe(selectedObj.name, code);
+                track.trackObject.keyframes = track.trackObject.keyframes.filter(k => k.code !== code);
+                recalcMaxTime();
+                updateTimelineUI();
+            });
+            contentDiv.appendChild(item);
+        });
+    }
+
+    function setCurrentTime(time) {
+        if (config.maxTime === 0) return;
+        time = Math.min(config.maxTime, Math.max(0, time));
+        currentTime = time;
+        tracks.forEach(track => {
+            if (track.trackObject.interpolate) {
+                const result = track.trackObject.interpolate(currentTime);
+                if (result) track.trackObject.setTransform(result.pos, result.rot);
+            }
+        });
+        updateTimelineUI();
+    }
+
+    function playAnimation() {
+        if (isPlaying) return;
+        if (currentTime >= config.maxTime - 0.001) {
+            setCurrentTime(0);
+        }
+        isPlaying = true;
+        const startTime = performance.now() / 1000;
+        const startCurrent = currentTime;
+        
+        function step() {
+            if (!isPlaying) return;
+            const now = performance.now() / 1000;
+            const elapsed = (now - startTime) * config.speed;
+            let newTime = startCurrent + elapsed;
+            if (newTime >= config.maxTime) {
+                newTime = config.maxTime;
+                setCurrentTime(newTime);
+                stopAnimation();
+                return;
+            }
+            setCurrentTime(newTime);
+            animationFrameId = requestAnimationFrame(step);
+        }
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(step);
+    }
+
+    function stopAnimation() {
+        isPlaying = false;
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+    }
+
+    async function addTrackToTimeline(name, mesh) {
+        const trackObject = createObjectTrack(mesh, name);
+        tracks.push({ name, trackObject });
+        recalcMaxTime();
+        updateTimelineUI();
+    }
+
+    function removeTrackFromTimeline(name) {
+        tracks = tracks.filter(t => t.name !== name);
+        recalcMaxTime();
+        updateTimelineUI();
+    }
+
+    async function requestAddKeyframe() {
+        if (tracks.length === 0) {
+            showCustomAlert('No hay objetos en la escena. Crea uno primero.');
+            return;
+        }
+        const objectNames = tracks.map(t => t.name);
+        const selectedName = await showObjectSelectionModal(objectNames);
+        if (!selectedName) return;
+        const track = tracks.find(t => t.name === selectedName);
+        if (!track) return;
+        const currentTransform = track.trackObject.getTransform();
+        await track.trackObject.addKeyframe(currentTime, currentTransform.pos, currentTransform.rot);
+        recalcMaxTime();
+        showCustomAlert(`Keyframe añadido a "${selectedName}" en ${currentTime.toFixed(2)}s`);
+    }
+
+    function showObjectSelectionModal(names) {
+        return new Promise((resolve) => {
+            let modal = document.getElementById('selectionModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'selectionModal';
+                modal.className = 'custom-modal';
+                modal.innerHTML = `
+                    <div class="title" data-i18n="selectObjectTitle">Seleccionar objeto</div>
+                    <div class="content" id="selectionModalContent"></div>
+                    <div style="text-align: right;">
+                        <button id="selectionModalCancel" data-i18n="cancel">Cancelar</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                const overlay = document.createElement('div');
+                overlay.id = 'selectionModalOverlay';
+                overlay.className = 'modal-overlay';
+                document.body.appendChild(overlay);
+                document.getElementById('selectionModalCancel').addEventListener('click', () => {
+                    overlay.style.display = 'none';
+                    modal.style.display = 'none';
+                    resolve(null);
+                });
+            }
+            const overlay = document.getElementById('selectionModalOverlay');
+            const modalDiv = document.getElementById('selectionModal');
+            const contentDiv = document.getElementById('selectionModalContent');
+            const ul = document.createElement('ul');
+            ul.className = 'object-select-list';
+            names.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                li.addEventListener('click', () => {
+                    overlay.style.display = 'none';
+                    modalDiv.style.display = 'none';
+                    resolve(name);
+                });
+                ul.appendChild(li);
+            });
+            contentDiv.innerHTML = '';
+            contentDiv.appendChild(ul);
+            overlay.style.display = 'block';
+            modalDiv.style.display = 'block';
+        });
+    }
+
+    function setupTimelineEvents() {
+        const addBtn = container.querySelector('#timelineAddBtn');
+        if (addBtn) addBtn.addEventListener('click', () => requestAddKeyframe());
+        const playBtn = container.querySelector('#timelinePlayBtn');
+        if (playBtn) playBtn.addEventListener('click', () => playAnimation());
+        const stopBtn = container.querySelector('#timelineStopBtn');
+        if (stopBtn) stopBtn.addEventListener('click', () => stopAnimation());
+        const speedSlider = container.querySelector('#speedSlider');
+        if (speedSlider) {
+            speedSlider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                config.speed = val;
+                const speedSpan = container.querySelector('#speedValue');
+                if (speedSpan) speedSpan.innerText = val.toFixed(2) + 'x';
+            });
+        }
+        const canvasDiv = container.querySelector('.timeline-canvas');
+        const tracksDiv = container.querySelector('.timeline-tracks');
+        if (canvasDiv && tracksDiv) {
+            canvasDiv.addEventListener('mousedown', (e) => {
+                if (e.target.classList?.contains('keyframe-marker')) return;
+                const rect = tracksDiv.getBoundingClientRect();
+                let left = e.clientX - rect.left;
+                left = Math.max(0, Math.min(rect.width, left));
+                const newTime = (left / rect.width) * config.maxTime;
+                setCurrentTime(newTime);
+                const onMouseMove = (moveEvent) => {
+                    let newLeft = moveEvent.clientX - rect.left;
+                    newLeft = Math.max(0, Math.min(rect.width, newLeft));
+                    const t = (newLeft / rect.width) * config.maxTime;
+                    setCurrentTime(t);
+                };
+                const onMouseUp = () => {
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                };
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            });
+        }
+        const toggleBtn = container.querySelector('#toggleTimelineBtn');
+        if (toggleBtn) {
+            let collapsed = false;
+            const contentDiv = container.querySelector('#timelineContent');
+            toggleBtn.addEventListener('click', () => {
+                collapsed = !collapsed;
+                contentDiv.classList.toggle('collapsed', collapsed);
+                toggleBtn.innerText = collapsed ? '▲' : '▼';
+            });
+        }
+        const keyframeListHeader = document.getElementById('keyframeListHeader');
+        const keyframeListContent = document.getElementById('keyframeListContent');
+        if (keyframeListHeader) {
+            let listCollapsed = false;
+            keyframeListHeader.addEventListener('click', () => {
+                listCollapsed = !listCollapsed;
+                keyframeListContent.classList.toggle('collapsed', listCollapsed);
+                document.getElementById('keyframeListToggle').innerText = listCollapsed ? '▲' : '▼';
+            });
+        }
+    }
+
+    setupTimelineEvents();
+    updateTimelineUI();
+    new ResizeObserver(() => updateTimelineUI()).observe(container);
+    window.addEventListener('resize', () => updateTimelineUI());
+
+    // ==================== PARTICLE SYSTEM ====================
+    class ParticleEmitter {
+        constructor(mesh) {
+            this.mesh = mesh;
+            this.enabled = false;
+            this.particles = [];
+            this.geometry = new THREE.BufferGeometry();
+            this.material = new THREE.PointsMaterial({ color: 0x000000, size: 0.1 });
+            this.points = new THREE.Points(this.geometry, this.material);
+            scene.add(this.points);
+            this.lastEmitTime = 0;
+            this.emitRate = 20;
+            this.particleSpeed = 2.0;
+            this.maxDistance = 3.0;
+            this.animationId = null;
+            this.update = this.update.bind(this);
+        }
+        
+        start() {
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            this.animationId = requestAnimationFrame(this.update);
+        }
+        
+        stop() {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        }
+        
+        update(now) {
+            if (!this.enabled) {
+                this.particles = [];
+                this.updateGeometry();
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+                return;
+            }
+            
+            const timeSec = now / 1000;
+            if (this.lastEmitTime === 0) this.lastEmitTime = timeSec;
+            const dt = Math.min(0.1, timeSec - this.lastEmitTime);
+            const particlesToEmit = Math.floor(dt * this.emitRate);
+            if (particlesToEmit > 0) {
+                for (let i = 0; i < particlesToEmit; i++) {
+                    const dir = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                    const pos = this.mesh.position.clone();
+                    const velocity = dir.multiplyScalar(this.particleSpeed);
+                    this.particles.push({
+                        position: pos,
+                        velocity: velocity,
+                        life: 1.0,
+                        maxLife: this.maxDistance / this.particleSpeed
+                    });
+                }
+                this.lastEmitTime = timeSec;
+            }
+            
+            for (let i = this.particles.length-1; i >= 0; i--) {
+                const p = this.particles[i];
+                p.position.add(p.velocity.clone().multiplyScalar(dt));
+                p.life -= dt / p.maxLife;
+                if (p.life <= 0 || p.position.distanceTo(this.mesh.position) > this.maxDistance) {
+                    this.particles.splice(i,1);
+                }
+            }
+            
+            this.updateGeometry();
+            this.animationId = requestAnimationFrame(this.update);
+        }
+        
+        updateGeometry() {
+            const positions = [];
+            this.particles.forEach(p => {
+                positions.push(p.position.x, p.position.y, p.position.z);
+            });
+            this.geometry.dispose();
+            this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+        }
+        
+        setEnabled(enabled) {
+            if (this.enabled === enabled) return;
+            this.enabled = enabled;
+            if (enabled) {
+                this.particles = [];
+                this.lastEmitTime = 0;
+                this.start();
+            } else {
+                this.stop();
+                this.particles = [];
+                this.updateGeometry();
+            }
+        }
+        
+        setEmitRate(rate) { this.emitRate = rate; }
+        setSpeed(speed) { this.particleSpeed = speed; }
+        setMaxDistance(dist) { this.maxDistance = dist; }
+        
+        dispose() {
+            this.stop();
+            scene.remove(this.points);
+            this.geometry.dispose();
+            this.material.dispose();
+        }
+    }
+
+    // ==================== UI PROPIEDADES ====================
+    function updateObjectListUI() {
+        const listEl = document.getElementById('objectList');
+        listEl.innerHTML = '';
         objects.forEach(obj => {
             const li = document.createElement('li');
             li.textContent = `${obj.name} (${obj.type})`;
-            if (currentSelectedId === obj.id) li.classList.add('selected');
-            const propsBtn = document.createElement('button'); propsBtn.textContent = '📋'; propsBtn.classList.add('props-btn');
+            if (selectedObjectId === obj.id) li.classList.add('selected');
+            const propsBtn = document.createElement('button'); 
+            propsBtn.textContent = '📋';
+            propsBtn.className = 'props-btn';
             propsBtn.addEventListener('click', (e) => { e.stopPropagation(); showFloatProperties(obj.id); });
-            const delBtn = document.createElement('button'); delBtn.textContent = '❌';
-            delBtn.addEventListener('click', (e) => { e.stopPropagation(); removeObjectWithUndo(obj.id); });
+            const delBtn = document.createElement('button'); 
+            delBtn.textContent = '❌';
+            delBtn.className = 'del-btn';
+            delBtn.addEventListener('click', (e) => { e.stopPropagation(); removeObject(obj.id); });
             li.appendChild(propsBtn); li.appendChild(delBtn);
-            li.addEventListener('click', () => scene3D.selectObject(obj.id));
-            objectListEl.appendChild(li);
-        });
-        updatePropertiesSubmenu();
-    }
-
-    function updatePropertiesSubmenu() {
-        // Limpiar submenú Editar (excepto los fijos que se añaden después)
-        const existingSeparator = document.getElementById('propertiesSubmenuSeparator');
-        if (existingSeparator) existingSeparator.remove();
-        const existingLabel = document.querySelector('#dropdownEditar span');
-        if (existingLabel && existingLabel.textContent === 'Propiedades de:') existingLabel.remove();
-        const existingItems = document.querySelectorAll('#dropdownEditar a[data-prop-item]');
-        existingItems.forEach(item => item.remove());
-        const objects = scene3D.getObjectList();
-        if (objects.length === 0) return;
-        const separator = document.createElement('hr');
-        separator.id = 'propertiesSubmenuSeparator';
-        dropdownEditarUI.appendChild(separator);
-        const submenuLabel = document.createElement('span');
-        submenuLabel.textContent = 'Propiedades de:';
-        submenuLabel.style.padding = '8px 12px';
-        submenuLabel.style.display = 'block';
-        submenuLabel.style.color = '#1abc9c';
-        submenuLabel.style.fontWeight = 'bold';
-        dropdownEditarUI.appendChild(submenuLabel);
-        objects.forEach(obj => {
-            const a = document.createElement('a');
-            a.href = '#';
-            a.textContent = obj.name;
-            a.setAttribute('data-prop-item', 'true');
-            a.addEventListener('click', (e) => {
-                e.preventDefault();
-                scene3D.selectObject(obj.id);
-            });
-            dropdownEditarUI.appendChild(a);
+            li.addEventListener('click', () => selectObject(obj.id));
+            listEl.appendChild(li);
         });
     }
 
-    // Propiedades flotantes
-    const floatModalOverlay = document.getElementById('floatModalOverlay');
-    const floatModal = document.getElementById('floatModal');
-    const floatModalTitle = document.getElementById('floatModalTitle');
-    const floatModalContent = document.getElementById('floatModalContent');
-    const floatModalClose = document.getElementById('floatModalClose');
-    function showFloatProperties(objectId) {
-        const obj = scene3D.getObject(objectId);
+    function getSelectedObjectProperties() {
+        const obj = objects.find(o => o.id === selectedObjectId);
+        if (!obj) return null;
+        const mesh = obj.mesh;
+        let color = 0xffffff, opacity = 1, metalness = 0.7, emissive = 0x000000;
+        if (mesh.material) {
+            color = mesh.material.color.getHex();
+            opacity = mesh.material.opacity;
+            metalness = mesh.material.metalness;
+            emissive = mesh.material.emissive.getHex();
+        }
+        let particleEnabled = false, particleRate = 20, particleSpeed = 2, particleDistance = 3;
+        if (obj.particleSystem) {
+            particleEnabled = obj.particleSystem.enabled;
+            particleRate = obj.particleSystem.emitRate;
+            particleSpeed = obj.particleSystem.particleSpeed;
+            particleDistance = obj.particleSystem.maxDistance;
+        }
+        return {
+            name: obj.name,
+            position: mesh.position.clone(),
+            scale: mesh.scale.clone(),
+            rotation: mesh.rotation.clone(),
+            color: color,
+            texture: 'none',
+            opacity: opacity,
+            metalness: metalness,
+            emissive: emissive,
+            particleEnabled, particleRate, particleSpeed, particleDistance
+        };
+    }
+
+    function updateSelectedObjectProperty(prop, value) {
+        const obj = objects.find(o => o.id === selectedObjectId);
         if (!obj) return;
-        const data = scene3D.getObjectData(objectId);
-        if (!data) return;
+        const mesh = obj.mesh;
+        if (!mesh.material && prop !== 'name' && prop !== 'position' && prop !== 'scale' && prop !== 'rotation' && !prop.startsWith('particle')) return;
+        switch (prop) {
+            case 'name': obj.name = value; break;
+            case 'color': if (mesh.material) mesh.material.color.set(value); break;
+            case 'position': mesh.position.set(value.x, value.y, value.z); break;
+            case 'scale': mesh.scale.set(value.x, value.y, value.z); break;
+            case 'rotation': mesh.rotation.set(value.x, value.y, value.z); break;
+            case 'opacity': if (mesh.material) { mesh.material.transparent = true; mesh.material.opacity = value; } break;
+            case 'metalness': if (mesh.material) mesh.material.metalness = value; break;
+            case 'emissive': if (mesh.material) mesh.material.emissive.set(value); break;
+            case 'particleEnabled':
+                if (value) {
+                    if (!obj.particleSystem) obj.particleSystem = new ParticleEmitter(mesh);
+                    obj.particleSystem.setEnabled(true);
+                } else {
+                    if (obj.particleSystem) obj.particleSystem.setEnabled(false);
+                }
+                break;
+            case 'particleRate':
+                if (obj.particleSystem) obj.particleSystem.setEmitRate(value);
+                break;
+            case 'particleSpeed':
+                if (obj.particleSystem) obj.particleSystem.setSpeed(value);
+                break;
+            case 'particleDistance':
+                if (obj.particleSystem) obj.particleSystem.setMaxDistance(value);
+                break;
+        }
+        updateObjectListUI();
+        showProperties(selectedObjectId);
+    }
+
+    function showProperties(objectId) {
+        const props = getSelectedObjectProperties();
+        if (!props) { 
+            document.getElementById('propContent').innerHTML = '<p style="color:var(--text-secondary);" data-i18n="selectObjectMsg">Selecciona un objeto</p>';
+            closePropertiesPanel();
+            return;
+        }
+        document.getElementById('propertiesPanel').classList.add('open');
         const html = `
-            <div class="prop-group"><label>Nombre</label><input type="text" id="floatObjName" value="${data.name}"></div>
-            <div class="prop-group"><label>Color</label><input type="color" id="floatObjColor" value="#${data.color.toString(16).padStart(6,'0')}"></div>
-            <div class="prop-group"><label>Posición</label><div><input type="number" step="0.1" id="floatPosX" value="${data.position.x}"><input type="number" step="0.1" id="floatPosY" value="${data.position.y}"><input type="number" step="0.1" id="floatPosZ" value="${data.position.z}"></div></div>
-            <div class="prop-group"><label>Escala</label><div><input type="number" step="0.1" id="floatScaleX" value="${data.scale.x}"><input type="number" step="0.1" id="floatScaleY" value="${data.scale.y}"><input type="number" step="0.1" id="floatScaleZ" value="${data.scale.z}"></div></div>
-            <div class="prop-group"><label>Rotación (rad)</label><div><input type="number" step="0.1" id="floatRotX" value="${data.rotation.x}"><input type="number" step="0.1" id="floatRotY" value="${data.rotation.y}"><input type="number" step="0.1" id="floatRotZ" value="${data.rotation.z}"></div></div>
+            <div class="prop-group"><label data-i18n="propName">Nombre</label><input type="text" id="objName" value="${props.name}"></div>
+            <div class="prop-group"><label data-i18n="propColor">Color</label><input type="color" id="objColor" value="#${props.color.toString(16).padStart(6,'0')}"></div>
+            <div class="prop-group"><label data-i18n="propPosition">Posición</label><div><input type="number" step="0.1" id="posX" value="${props.position.x}"><input type="number" step="0.1" id="posY" value="${props.position.y}"><input type="number" step="0.1" id="posZ" value="${props.position.z}"></div></div>
+            <div class="prop-group"><label data-i18n="propScale">Escala</label><div><input type="number" step="0.1" id="scaleX" value="${props.scale.x}"><input type="number" step="0.1" id="scaleY" value="${props.scale.y}"><input type="number" step="0.1" id="scaleZ" value="${props.scale.z}"></div></div>
+            <div class="prop-group"><label data-i18n="propRotation">Rotación (rad)</label><div><input type="number" step="0.1" id="rotX" value="${props.rotation.x}"><input type="number" step="0.1" id="rotY" value="${props.rotation.y}"><input type="number" step="0.1" id="rotZ" value="${props.rotation.z}"></div></div>
         `;
-        floatModalTitle.innerText = `Propiedades de: ${data.name}`;
-        floatModalContent.innerHTML = html;
-        floatModalOverlay.style.display = 'block';
+        document.getElementById('propContent').innerHTML = html;
+        document.getElementById('objName').onchange = (e) => updateSelectedObjectProperty('name', e.target.value);
+        document.getElementById('objColor').oninput = (e) => updateSelectedObjectProperty('color', e.target.value);
+        document.getElementById('posX').onchange = (e) => updateSelectedObjectProperty('position', { x: parseFloat(e.target.value), y: props.position.y, z: props.position.z });
+        document.getElementById('posY').onchange = (e) => updateSelectedObjectProperty('position', { x: props.position.x, y: parseFloat(e.target.value), z: props.position.z });
+        document.getElementById('posZ').onchange = (e) => updateSelectedObjectProperty('position', { x: props.position.x, y: props.position.y, z: parseFloat(e.target.value) });
+        document.getElementById('scaleX').onchange = (e) => updateSelectedObjectProperty('scale', { x: parseFloat(e.target.value), y: props.scale.y, z: props.scale.z });
+        document.getElementById('scaleY').onchange = (e) => updateSelectedObjectProperty('scale', { x: props.scale.x, y: parseFloat(e.target.value), z: props.scale.z });
+        document.getElementById('scaleZ').onchange = (e) => updateSelectedObjectProperty('scale', { x: props.scale.x, y: props.scale.y, z: parseFloat(e.target.value) });
+        document.getElementById('rotX').onchange = (e) => updateSelectedObjectProperty('rotation', { x: parseFloat(e.target.value), y: props.rotation.y, z: props.rotation.z });
+        document.getElementById('rotY').onchange = (e) => updateSelectedObjectProperty('rotation', { x: props.rotation.x, y: parseFloat(e.target.value), z: props.rotation.z });
+        document.getElementById('rotZ').onchange = (e) => updateSelectedObjectProperty('rotation', { x: props.rotation.x, y: props.rotation.y, z: parseFloat(e.target.value) });
+    }
+
+    function closePropertiesPanel() { document.getElementById('propertiesPanel').classList.remove('open'); }
+
+    function showFloatProperties(objectId) {
+        const obj = objects.find(o => o.id === objectId);
+        if (!obj) return;
+        const props = getSelectedObjectProperties();
+        if (!props) return;
+        const floatModal = document.getElementById('floatModal');
+        const overlay = document.getElementById('floatModalOverlay');
+        const content = document.getElementById('floatModalContent');
+        const title = document.getElementById('floatModalTitle');
+        title.innerText = `Propiedades de: ${props.name}`;
+        content.innerHTML = `
+            <div class="prop-group"><label data-i18n="propName">Nombre</label><input type="text" id="floatObjName" value="${props.name}"></div>
+            <div class="prop-group"><label data-i18n="propColor">Color</label><input type="color" id="floatObjColor" value="#${props.color.toString(16).padStart(6,'0')}"></div>
+            <div class="prop-group"><label data-i18n="propPosition">Posición</label><div><input type="number" step="0.1" id="floatPosX" value="${props.position.x}"><input type="number" step="0.1" id="floatPosY" value="${props.position.y}"><input type="number" step="0.1" id="floatPosZ" value="${props.position.z}"></div></div>
+            <div class="prop-group"><label data-i18n="propScale">Escala</label><div><input type="number" step="0.1" id="floatScaleX" value="${props.scale.x}"><input type="number" step="0.1" id="floatScaleY" value="${props.scale.y}"><input type="number" step="0.1" id="floatScaleZ" value="${props.scale.z}"></div></div>
+            <div class="prop-group"><label data-i18n="propRotation">Rotación (rad)</label><div><input type="number" step="0.1" id="floatRotX" value="${props.rotation.x}"><input type="number" step="0.1" id="floatRotY" value="${props.rotation.y}"><input type="number" step="0.1" id="floatRotZ" value="${props.rotation.z}"></div></div>
+        `;
+        overlay.style.display = 'block';
         floatModal.style.display = 'block';
-        document.getElementById('floatObjName').onchange = (e) => { obj.name = e.target.value; updateObjectList(); };
+        document.getElementById('floatObjName').onchange = (e) => { obj.name = e.target.value; updateObjectListUI(); };
         document.getElementById('floatObjColor').oninput = (e) => obj.mesh.material.color.set(e.target.value);
         document.getElementById('floatPosX').onchange = (e) => obj.mesh.position.x = parseFloat(e.target.value);
         document.getElementById('floatPosY').onchange = (e) => obj.mesh.position.y = parseFloat(e.target.value);
@@ -572,37 +1672,53 @@
         document.getElementById('floatRotY').onchange = (e) => obj.mesh.rotation.y = parseFloat(e.target.value);
         document.getElementById('floatRotZ').onchange = (e) => obj.mesh.rotation.z = parseFloat(e.target.value);
     }
-    floatModalClose.addEventListener('click', () => { floatModalOverlay.style.display = 'none'; floatModal.style.display = 'none'; });
+    document.getElementById('floatModalClose')?.addEventListener('click', () => {
+        document.getElementById('floatModalOverlay').style.display = 'none';
+        document.getElementById('floatModal').style.display = 'none';
+    });
 
-    // Efectos
-    effectsBtnUI.addEventListener('click', async () => {
-        const obj = scene3D.getSelectedObject();
+    // ==================== EFECTOS ====================
+    document.getElementById('effectsBtn').addEventListener('click', async () => {
+        const obj = objects.find(o => o.id === selectedObjectId);
         if (!obj) { showCustomAlert('Selecciona un objeto primero.'); return; }
-        const props = scene3D.getSelectedObjectProperties();
+        const props = getSelectedObjectProperties();
         const html = `
-            <label>Opacidad: <span id="opacityVal">${props.opacity}</span></label>
+            <label data-i18n="effectOpacity">Opacidad: <span id="opacityVal">${props.opacity}</span></label>
             <input type="range" id="effectOpacity" min="0" max="1" step="0.01" value="${props.opacity}">
-            <label>Rugosidad: <span id="roughnessVal">${props.roughness}</span></label>
-            <input type="range" id="effectRoughness" min="0" max="1" step="0.01" value="${props.roughness}">
-            <label>Metalicidad: <span id="metalnessVal">${props.metalness}</span></label>
+            <label data-i18n="effectMetalness">Metalicidad: <span id="metalnessVal">${props.metalness}</span></label>
             <input type="range" id="effectMetalness" min="0" max="1" step="0.01" value="${props.metalness}">
-            <label>Emisión (color):</label>
+            <label data-i18n="effectEmissive">Emisión (color):</label>
             <input type="color" id="effectEmissive" value="#${props.emissive.toString(16).padStart(6,'0')}">
+            <hr>
+            <label data-i18n="particleEnable">Emisión de partículas negras:</label>
+            <input type="checkbox" id="effectParticleEnable" ${props.particleEnabled ? 'checked' : ''}>
+            <label data-i18n="particleRate">Tasa (partículas/seg): <span id="particleRateVal">${props.particleRate}</span></label>
+            <input type="range" id="effectParticleRate" min="5" max="100" step="1" value="${props.particleRate}">
+            <label data-i18n="particleSpeed">Velocidad: <span id="particleSpeedVal">${props.particleSpeed}</span></label>
+            <input type="range" id="effectParticleSpeed" min="0.5" max="5" step="0.1" value="${props.particleSpeed}">
+            <label data-i18n="particleDistance">Distancia máxima: <span id="particleDistanceVal">${props.particleDistance}</span></label>
+            <input type="range" id="effectParticleDistance" min="0.5" max="8" step="0.2" value="${props.particleDistance}">
         `;
         await showCustomModal('Efectos del objeto', html, true);
         const opacity = parseFloat(document.getElementById('effectOpacity')?.value || props.opacity);
-        const roughness = parseFloat(document.getElementById('effectRoughness')?.value || props.roughness);
         const metalness = parseFloat(document.getElementById('effectMetalness')?.value || props.metalness);
         const emissive = document.getElementById('effectEmissive')?.value || '#000000';
-        updateObjectPropertyWithUndo('opacity', opacity);
-        updateObjectPropertyWithUndo('roughness', roughness);
-        updateObjectPropertyWithUndo('metalness', metalness);
-        updateObjectPropertyWithUndo('emissive', emissive);
-        showProperties(currentSelectedId);
+        const particleEnabled = document.getElementById('effectParticleEnable')?.checked || false;
+        const particleRate = parseFloat(document.getElementById('effectParticleRate')?.value || props.particleRate);
+        const particleSpeed = parseFloat(document.getElementById('effectParticleSpeed')?.value || props.particleSpeed);
+        const particleDistance = parseFloat(document.getElementById('effectParticleDistance')?.value || props.particleDistance);
+        
+        updateSelectedObjectProperty('opacity', opacity);
+        updateSelectedObjectProperty('metalness', metalness);
+        updateSelectedObjectProperty('emissive', emissive);
+        updateSelectedObjectProperty('particleEnabled', particleEnabled);
+        updateSelectedObjectProperty('particleRate', particleRate);
+        updateSelectedObjectProperty('particleSpeed', particleSpeed);
+        updateSelectedObjectProperty('particleDistance', particleDistance);
     });
 
     // Textura personalizada
-    customTextureInputUI.addEventListener('change', (e) => {
+    document.getElementById('customTextureInput').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
@@ -610,7 +1726,7 @@
             const img = new Image();
             img.onload = () => {
                 const texture = new THREE.CanvasTexture(img);
-                const obj = scene3D.getSelectedObject();
+                const obj = objects.find(o => o.id === selectedObjectId);
                 if (obj && obj.mesh.material) {
                     obj.mesh.material.map = texture;
                     obj.mesh.material.needsUpdate = true;
@@ -622,147 +1738,414 @@
         reader.readAsDataURL(file);
     });
 
+    // ==================== LECCIONES ====================
+    let lessons = [];
+    async function loadLessons() {
+        try {
+            const response = await fetch('lessons.json');
+            lessons = await response.json();
+        } catch (e) {
+            console.warn('No se encontró lessons.json, usando lecciones por defecto');
+            lessons = [
+                { id:1, title:{ es:"Mover un objeto", en:"Move an object" }, description:{ es:"Selecciona el cubo y muévelo a X=2,Y=0,Z=0", en:"Select the cube and move it to X=2,Y=0,Z=0" }, content:"" },
+                { id:2, title:{ es:"Cambiar color", en:"Change color" }, description:{ es:"Cambia el color del cubo a rojo", en:"Change the cube's color to red" }, content:"" },
+                { id:3, title:{ es:"Añadir keyframe", en:"Add keyframe" }, description:{ es:"Añade un keyframe al objeto actual", en:"Add a keyframe to the current object" }, content:"" }
+            ];
+        }
+    }
+    await loadLessons();
+    let currentLessonIndex = 0;
+    const lessonFloatPanel = document.getElementById('lessonFloatPanel');
+    const lessonFloatTitle = document.getElementById('lessonFloatTitle');
+    const lessonFloatContent = document.getElementById('lessonFloatContent');
+    const closeLessonFloat = document.getElementById('closeLessonFloat');
+    const lessonPagination = document.getElementById('lessonPagination');
+    const openLessonsBtn = document.getElementById('openLessonsBtn');
+    function updateLessonPanelContent() {
+        const lesson = lessons[currentLessonIndex];
+        const titleText = currentLang === 'es' ? lesson.title.es : lesson.title.en;
+        const descText = currentLang === 'es' ? lesson.description.es : lesson.description.en;
+        lessonFloatTitle.innerText = titleText;
+        lessonFloatContent.innerHTML = `<h4>${titleText}</h4><p>${descText}</p>`;
+        lessonPagination.innerHTML = `
+            <button id="prevLessonBtn" ${currentLessonIndex===0?'disabled':''}>${t('prevLesson')}</button>
+            <span>${currentLessonIndex+1}/${lessons.length}</span>
+            <button id="nextLessonBtn" ${currentLessonIndex===lessons.length-1?'disabled':''}>${t('nextLesson')}</button>
+        `;
+        document.getElementById('prevLessonBtn')?.addEventListener('click', () => { if(currentLessonIndex>0){ currentLessonIndex--; updateLessonPanelContent(); } });
+        document.getElementById('nextLessonBtn')?.addEventListener('click', () => { if(currentLessonIndex<lessons.length-1){ currentLessonIndex++; updateLessonPanelContent(); } });
+    }
+    openLessonsBtn.addEventListener('click', () => { updateLessonPanelContent(); lessonFloatPanel.style.display = 'block'; lessonFloatPanel.style.left = '150px'; lessonFloatPanel.style.top = '100px'; });
+    closeLessonFloat.addEventListener('click', () => { lessonFloatPanel.style.display = 'none'; });
+    let isDraggingLesson = false, lessonDragOffsetX=0, lessonDragOffsetY=0;
+    const lessonFloatHeader = document.getElementById('lessonFloatHeader');
+    lessonFloatHeader.addEventListener('mousedown', (e) => {
+        if(e.target === closeLessonFloat) return;
+        isDraggingLesson = true;
+        lessonDragOffsetX = e.clientX - lessonFloatPanel.offsetLeft;
+        lessonDragOffsetY = e.clientY - lessonFloatPanel.offsetTop;
+        lessonFloatPanel.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => { if(isDraggingLesson){ lessonFloatPanel.style.left = (e.clientX - lessonDragOffsetX)+'px'; lessonFloatPanel.style.top = (e.clientY - lessonDragOffsetY)+'px'; } });
+    window.addEventListener('mouseup', () => { isDraggingLesson = false; lessonFloatPanel.style.cursor = 'default'; });
+
+    // ==================== CÁMARA PREVIEW FLOTANTE ====================
+    let previewRenderer = null, previewCamera = null, currentPreviewCameraObj = null, previewAnimationId = null;
+    function startCameraPreview(cameraObjectMesh) {
+        const panel = document.getElementById("cameraFloatPanel");
+        const canvas = document.getElementById("cameraPreviewCanvas");
+        if (!panel || !canvas) return;
+        if (!previewRenderer) {
+            previewRenderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+            previewRenderer.setSize(320, 240);
+            previewRenderer.setClearColor(0x000000, 0.5);
+        }
+        if (!previewCamera) previewCamera = new THREE.PerspectiveCamera(60, 320/240, 0.1, 1000);
+        currentPreviewCameraObj = cameraObjectMesh;
+        panel.classList.add("active");
+        function updatePreviewCamera() {
+            if (!currentPreviewCameraObj || !panel.classList.contains("active")) return;
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(currentPreviewCameraObj.quaternion);
+            const lensOffset = new THREE.Vector3(0, 0.1, 0.45).applyQuaternion(currentPreviewCameraObj.quaternion);
+            previewCamera.position.copy(currentPreviewCameraObj.position.clone().add(lensOffset));
+            previewCamera.lookAt(currentPreviewCameraObj.position.clone().add(forward.multiplyScalar(2)));
+        }
+        function renderLoop() {
+            if (!panel.classList.contains("active") || !currentPreviewCameraObj) {
+                if (previewAnimationId) cancelAnimationFrame(previewAnimationId);
+                previewAnimationId = null;
+                return;
+            }
+            updatePreviewCamera();
+            previewRenderer.render(scene, previewCamera);
+            previewAnimationId = requestAnimationFrame(renderLoop);
+        }
+        if (previewAnimationId) cancelAnimationFrame(previewAnimationId);
+        renderLoop();
+    }
+    
+    // Hacer ventana arrastrable y colapsable
+    const floatPanel = document.getElementById("cameraFloatPanel");
+    const floatHeader = document.getElementById("cameraFloatHeader");
+    const toggleBtn = document.getElementById("cameraFloatToggle");
+    const floatContent = document.getElementById("cameraFloatContent");
+    let isDragging = false, dragOffsetX, dragOffsetY;
+    floatHeader.addEventListener("mousedown", (e) => {
+        if (e.target === toggleBtn) return;
+        isDragging = true;
+        dragOffsetX = e.clientX - floatPanel.offsetLeft;
+        dragOffsetY = e.clientY - floatPanel.offsetTop;
+        floatPanel.style.cursor = "grabbing";
+        e.preventDefault();
+    });
+    window.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        floatPanel.style.left = (e.clientX - dragOffsetX) + "px";
+        floatPanel.style.top = (e.clientY - dragOffsetY) + "px";
+        floatPanel.style.right = "auto";
+        floatPanel.style.bottom = "auto";
+    });
+    window.addEventListener("mouseup", () => { isDragging = false; floatPanel.style.cursor = "default"; });
+    let collapsed = false;
+    toggleBtn.addEventListener("click", () => {
+        collapsed = !collapsed;
+        floatContent.style.display = collapsed ? "none" : "block";
+        toggleBtn.innerText = collapsed ? "▲" : "▼";
+    });
+    document.getElementById("exportAnimationBtn").addEventListener("click", async () => {
+        if (!currentPreviewCameraObj) { showCustomAlert("No hay ninguna cámara seleccionada."); return; }
+        if (config.maxTime <= 0) { showCustomAlert("La duración de la animación es cero."); return; }
+        showCustomAlert("Preparando exportación... (puede tomar unos segundos)");
+        
+        const progressBar = document.getElementById("videoProgressBar");
+        const progressFill = document.getElementById("videoProgressFill");
+        progressBar.style.display = "block";
+        
+        try {
+            await exportAnimationFromCamera(
+                currentPreviewCameraObj,
+                config.maxTime,
+                config.speed,
+                (percent) => { progressFill.style.width = percent + "%"; },
+                scene,
+                setCurrentTime,
+                gridGroup
+            );
+        } catch (err) {
+            console.error(err);
+            showCustomAlert("Error al exportar el vídeo: " + err.message);
+        } finally {
+            progressBar.style.display = "none";
+        }
+    });
+
+    // ==================== MENÚ "MÁS" (información y cambio de modo) ====================
+    document.getElementById("infoBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        showCustomAlert(
+            "Información de 3DBuilder",
+            `<h3>3DBuilder - Modelado y Animación 3D</h3>
+             <p>Versión: 2.0 (Timeline infinito)</p>
+             <p>Desarrollado con Three.js y tecnologías web.</p>
+             <p>Características: Keyframes dinámicos, animación progresiva, exportación de vídeo, importación/exportación de proyectos ZIP, partículas, efectos de materiales, lecciones interactivas, modo claro/oscuro, traducción español/inglés.</p>
+             <p>© 2025 - Todos los derechos reservados.</p>`,
+            false
+        );
+    });
+    document.getElementById("changeTimelineModeBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        showCustomAlert("Cambiar modo de timeline", "<p>Función en desarrollo. Próximamente podrás alternar entre vista de curvas y vista de bloques en la línea de tiempo.</p>", false);
+    });
+
+    // ==================== TRADUCCIONES Y TEMA ====================
+    const i18n = {
+        es: { 
+            menuArchivo:"Archivo", menuEditar:"Editar", menuInsertar:"Insertar", menuVer:"Ver", menuConfig:"Configuración", menuMore:"Más",
+            objectsTitle:"📦 Objetos en escena", loadModelBtn:"📁 Cargar modelo", learnBtn:"🎓 Aprender",
+            propertiesTitle:"⚙️ Propiedades", selectObjectMsg:"Selecciona un objeto", effectsBtn:"✨ Efectos",
+            customTextureLabel:"Cargar textura personalizada", newProject:"Nuevo", exportProject:"Exportar proyecto (ZIP)", importProject:"Importar proyecto (ZIP)",
+            exportSTL:"Exportar a STL", exportGLTF:"Exportar a GLTF", exportOBJ:"Exportar a OBJ", importModel:"Importar modelo 3D",
+            resetCamera:"Restablecer cámara", toggleGrid:"Ocultar/Mostrar rejilla", accept:"Aceptar", cancel:"Cancelar",
+            close:"Cerrar", lessonsTitle:"Lecciones", prevLesson:"◀ Lección anterior", nextLesson:"Siguiente lección ▶",
+            lessonCompleted:"✅ ¡Lección completada!", lessonActive:"Lección activa: ", timelineHeader:"Línea de tiempo",
+            addKeyframe:"➕ Añadir Keyframe", play:"▶ Reproducir", stop:"⏹ Detener", deleteOption:"Suprimir (Del)",
+            deleteConfirm:"¿Eliminar objeto seleccionado?", noObject:"No hay objeto seleccionado", undo:"Deshacer (Ctrl+Z)",
+            redo:"Rehacer (Ctrl+Y)", copy:"Copiar (Ctrl+C)", cut:"Cortar (Ctrl+X)", paste:"Pegar (Ctrl+V)",
+            scale:"Dimensionar (Escala)", selectAll:"Seleccionar todo (Ctrl+A)", speedLabel:"Velocidad:",
+            globalTimeLabel:"Tiempo global:", keyframesListTitle:"📋 Keyframes", selectObjectKeyframeMsg:"Selecciona un objeto",
+            noKeyframesMsg:"Sin keyframes", selectObjectTitle:"Seleccionar objeto", propName:"Nombre", propColor:"Color",
+            propPosition:"Posición", propScale:"Escala", propRotation:"Rotación (rad)", effectOpacity:"Opacidad",
+            effectMetalness:"Metalicidad", effectEmissive:"Emisión (color)", particleEnable:"Emisión de partículas negras",
+            particleRate:"Tasa (partículas/seg)", particleSpeed:"Velocidad", particleDistance:"Distancia máxima",
+            insertCube:"Cubo", insertCylinder:"Cilindro", insertSphere:"Esfera", insertCone:"Cono",
+            insertTorus:"Toro", insertTrapezoidalPrism:"Prisma Trapezoidal", insertTetrahedron:"Tetraedro",
+            insertTruncatedCylinder:"Cilindro truncado", insertCamera:"Cámara", insertLight:"Luz", loadModelOption:"Cargar modelo 3D...",
+            exportAnim:"Exportar video", info:"Información", changeTimelineMode:"Cambiar modo de timeline"
+        },
+        en: { 
+            menuArchivo:"File", menuEditar:"Edit", menuInsertar:"Insert", menuVer:"View", menuConfig:"Settings", menuMore:"More",
+            objectsTitle:"📦 Scene Objects", loadModelBtn:"📁 Load model", learnBtn:"🎓 Learn",
+            propertiesTitle:"⚙️ Properties", selectObjectMsg:"Select an object", effectsBtn:"✨ Effects",
+            customTextureLabel:"Load custom texture", newProject:"New", exportProject:"Export project (ZIP)", importProject:"Import project (ZIP)",
+            exportSTL:"Export to STL", exportGLTF:"Export to GLTF", exportOBJ:"Export to OBJ", importModel:"Import 3D model",
+            resetCamera:"Reset camera", toggleGrid:"Toggle grid", accept:"Accept", cancel:"Cancel",
+            close:"Close", lessonsTitle:"Lessons", prevLesson:"◀ Previous lesson", nextLesson:"Next lesson ▶",
+            lessonCompleted:"✅ Lesson completed!", lessonActive:"Active lesson: ", timelineHeader:"Timeline",
+            addKeyframe:"➕ Add Keyframe", play:"▶ Play", stop:"⏹ Stop", deleteOption:"Delete (Del)",
+            deleteConfirm:"Delete selected object?", noObject:"No object selected", undo:"Undo (Ctrl+Z)",
+            redo:"Redo (Ctrl+Y)", copy:"Copy (Ctrl+C)", cut:"Cut (Ctrl+X)", paste:"Paste (Ctrl+V)",
+            scale:"Scale", selectAll:"Select all (Ctrl+A)", speedLabel:"Speed:",
+            globalTimeLabel:"Global time:", keyframesListTitle:"📋 Keyframes", selectObjectKeyframeMsg:"Select an object",
+            noKeyframesMsg:"No keyframes", selectObjectTitle:"Select object", propName:"Name", propColor:"Color",
+            propPosition:"Position", propScale:"Scale", propRotation:"Rotation (rad)", effectOpacity:"Opacity",
+            effectMetalness:"Metalness", effectEmissive:"Emission (color)", particleEnable:"Black particle emission",
+            particleRate:"Rate (particles/sec)", particleSpeed:"Speed", particleDistance:"Max distance",
+            insertCube:"Cube", insertCylinder:"Cylinder", insertSphere:"Sphere", insertCone:"Cone",
+            insertTorus:"Torus", insertTrapezoidalPrism:"Trapezoidal Prism", insertTetrahedron:"Tetrahedron",
+            insertTruncatedCylinder:"Truncated Cylinder", insertCamera:"Camera", insertLight:"Light", loadModelOption:"Load 3D model...",
+            exportAnim:"Export video", info:"Information", changeTimelineMode:"Change timeline mode"
+        }
+    };
+    let currentLang = 'es';
+    function t(key) { return i18n[currentLang][key] || key; }
+    function updateUIStrings() {
+        document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(key) el.innerText = t(key); });
+        const addBtn = container.querySelector('#timelineAddBtn'); if(addBtn) addBtn.innerText = t('addKeyframe');
+        const playBtn = container.querySelector('#timelinePlayBtn'); if(playBtn) playBtn.innerText = t('play');
+        const stopBtn = container.querySelector('#timelineStopBtn'); if(stopBtn) stopBtn.innerText = t('stop');
+        const globalLabelSpan = container.querySelector('.timeline-controls label span[data-i18n="globalTimeLabel"]');
+        if(globalLabelSpan) globalLabelSpan.innerText = t('globalTimeLabel');
+        const keyframeHeader = document.getElementById('keyframeListHeader');
+        if(keyframeHeader) { const span = keyframeHeader.querySelector('span:first-child'); if(span && span.getAttribute('data-i18n') === 'keyframesListTitle') span.innerText = t('keyframesListTitle'); }
+        const insertItems = document.querySelectorAll('#dropdownInsertar a');
+        insertItems.forEach(a => { const key = a.getAttribute('data-i18n'); if(key) a.innerText = t(key); });
+        const editItems = document.querySelectorAll('#dropdownEditar a');
+        editItems.forEach(a => { const key = a.getAttribute('data-i18n'); if(key) a.innerText = t(key); });
+    }
+    document.getElementById('langEs').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'es'; updateUIStrings(); });
+    document.getElementById('langEn').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'en'; updateUIStrings(); });
+
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        const isLight = document.body.classList.contains('light-mode');
+        scene.background.setHex(isLight ? 0xe9eef3 : 0x1c1c24);
+        if (isLight) scene.fog.color.setHex(0xe9eef3);
+        else scene.fog.color.setHex(0x1c1c24);
+    }
+    document.getElementById('toggleTheme').addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); });
+
+    // ==================== EXPORTAR LISTA DE KEYFRAMES ====================
+    document.getElementById('exportLista').addEventListener('click', () => {
+        const data = loadAllKeyframes();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'Lista.json'; a.click();
+        URL.revokeObjectURL(url);
+    });
+    document.getElementById('importLista').addEventListener('click', () => {
+        const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const text = await file.text();
+            try {
+                const data = JSON.parse(text);
+                importKeyframes(data);
+                for (const track of tracks) {
+                    const kfs = data[track.name] || [];
+                    track.trackObject.keyframes = kfs.map(kf => ({ code: kf.code, time: kf.time, pos: new THREE.Vector3(kf.pos.x, kf.pos.y, kf.pos.z), rot: new THREE.Euler(kf.rot.x, kf.rot.y, kf.rot.z, 'XYZ') }));
+                }
+                recalcMaxTime();
+                updateTimelineUI();
+                showCustomAlert('Lista.json importada correctamente');
+            } catch(err) { showCustomAlert('Error al importar: ' + err.message); }
+        };
+        input.click();
+    });
+
+    // ==================== IMPORTAR MODELOS ====================
+    async function importModel(file) {
+        return new Promise((resolve, reject) => {
+            const extension = file.name.split('.').pop().toLowerCase();
+            const url = URL.createObjectURL(file);
+            let loader;
+            if (extension === 'gltf' || extension === 'glb') loader = new GLTFLoader();
+            else if (extension === 'obj') loader = new OBJLoader();
+            else if (extension === 'stl') loader = new STLLoader();
+            else { reject(new Error('Formato no soportado')); return; }
+            loader.load(url, (result) => {
+                URL.revokeObjectURL(url);
+                let model;
+                if (result.scene) model = result.scene;
+                else if (result instanceof THREE.Group) model = result;
+                else if (result instanceof THREE.BufferGeometry) { const material = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.6 }); model = new THREE.Mesh(result, material); }
+                else model = result;
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.0 / maxDim;
+                model.scale.set(scale, scale, scale);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center.clone().multiplyScalar(scale));
+                model.traverse(child => { if (child.isMesh) child.castShadow = true; });
+                model.userData.originalFileData = file;
+                model.modelFormat = extension;
+                resolve(model);
+            }, undefined, (error) => { URL.revokeObjectURL(url); reject(error); });
+        });
+    }
+
+    // ==================== EXPORTAR STL/GLTF ====================
+    function exportSelectedSTL() {
+        const obj = objects.find(o => o.id === selectedObjectId);
+        if (!obj) { showCustomAlert("Selecciona un objeto primero."); return; }
+        const exporter = new STLExporter();
+        const stlString = exporter.parse(obj.mesh, { binary: false });
+        const blob = new Blob([stlString], { type: 'text/plain' });
+        const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${obj.name}.stl`; link.click();
+        URL.revokeObjectURL(link.href);
+    }
+    function exportSelectedGLTF() {
+        const obj = objects.find(o => o.id === selectedObjectId);
+        if (!obj) { showCustomAlert("Selecciona un objeto primero."); return; }
+        const exporter = new GLTFExporter();
+        exporter.parse(obj.mesh, (result) => {
+            const jsonString = JSON.stringify(result, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${obj.name}.gltf`; link.click();
+            URL.revokeObjectURL(link.href);
+        }, { binary: false });
+    }
+    function resetCamera() { mainCamera.position.set(8,6,12); controls.target.set(0,0,0); controls.update(); }
+    function createCube(name) {
+        const geometry = new THREE.BoxGeometry(1,1,1);
+        const material = new THREE.MeshStandardMaterial({ color: 0x5f91d7, metalness: 0.7 });
+        const mesh = new THREE.Mesh(geometry, material);
+        return addObject(mesh, name, 'cube');
+    }
+    function createCameraObject() {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.8), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+        body.position.y=0;
+        const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.1,16), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+        lens.rotation.x=Math.PI/2; lens.position.z=0.45; lens.position.y=0.1;
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.1,0.4), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+        top.position.y=0.25;
+        group.add(body,lens,top);
+        return addObject(group, 'Cámara', 'camera');
+    }
+    function createLightObject() { const light = new THREE.PointLight(0xffffff, 1); return addObject(light, 'Luz', 'light'); }
+
     // ==================== MENÚS DESPLEGABLES ====================
     function setupDropdowns() {
         const menus = document.querySelectorAll('.menu');
-        let activeDropdown = null;
+        let active = null;
         menus.forEach(menu => {
             const dropdown = menu.querySelector('.dropdown');
             if (!dropdown) return;
             menu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (activeDropdown === dropdown) {
-                    dropdown.style.display = 'none';
-                    activeDropdown = null;
-                } else {
-                    if (activeDropdown) activeDropdown.style.display = 'none';
-                    dropdown.style.display = 'block';
-                    activeDropdown = dropdown;
-                }
+                if (active === dropdown) { dropdown.style.display = 'none'; active = null; }
+                else { if (active) active.style.display = 'none'; dropdown.style.display = 'block'; active = dropdown; }
             });
         });
-        document.addEventListener('click', () => {
-            if (activeDropdown) {
-                activeDropdown.style.display = 'none';
-                activeDropdown = null;
-            }
-        });
+        document.addEventListener('click', () => { if (active) { active.style.display = 'none'; active = null; } });
     }
     setupDropdowns();
 
-    // ==================== CONSTRUCCIÓN MENÚ EDITAR (TODAS LAS OPCIONES) ====================
-    const editItems = [
-        { key: 'undo', action: undo, i18n: 'undo' },
-        { key: 'redo', action: redo, i18n: 'redo' },
-        { key: 'copy', action: copySelected, i18n: 'copy' },
-        { key: 'cut', action: cutSelected, i18n: 'cut' },
-        { key: 'paste', action: pasteSelected, i18n: 'paste' },
-        { key: 'scale', action: () => { const obj = scene3D.getSelectedObject(); if(obj) { scene3D.transformControls.setMode('scale'); showCustomAlert(t('scale')); } else showCustomAlert(t('noObject')); }, i18n: 'scale' },
-        { key: 'delete', action: deleteSelected, i18n: 'deleteOption' },
-        { key: 'selectAll', action: selectAll, i18n: 'selectAll' }
+    // ==================== MENÚ EDITAR ====================
+    const dropdownEditar = document.getElementById('dropdownEditar');
+    const editActions = [
+        { text: "Mover objeto", action: () => { if(selectedObjectId) transformControls.setMode('translate'); else showCustomAlert("Selecciona un objeto."); }, i18nKey: "move" },
+        { text: "Rotar objeto", action: () => { if(selectedObjectId) transformControls.setMode('rotate'); else showCustomAlert("Selecciona un objeto."); }, i18nKey: "rotate" },
+        { text: "Escalar objeto", action: () => { if(selectedObjectId) transformControls.setMode('scale'); else showCustomAlert("Selecciona un objeto."); }, i18nKey: "scale" },
+        { text: "Copiar", action: () => { const obj=objects.find(o=>o.id===selectedObjectId); if(obj) localStorage.setItem('clipboard',JSON.stringify(obj)); }, i18nKey: "copy" },
+        { text: "Pegar", action: () => { const data=localStorage.getItem('clipboard'); if(data){ const objData=JSON.parse(data); createCube(objData.name+"_copia"); } }, i18nKey: "paste" },
+        { text: "Eliminar", action: () => { if(selectedObjectId && confirm("¿Eliminar?")) removeObject(selectedObjectId); }, i18nKey: "delete" }
     ];
-    editItems.forEach(item => {
-        const a = document.createElement('a');
-        a.href = '#';
-        a.setAttribute('data-i18n-key', item.i18n);
-        a.innerText = t(item.i18n);
+    editActions.forEach(item => {
+        const a = document.createElement('a'); a.href='#'; a.textContent = item.text; a.setAttribute('data-i18n', item.i18nKey);
         a.addEventListener('click', (e) => { e.preventDefault(); item.action(); });
-        dropdownEditarUI.appendChild(a);
+        dropdownEditar.appendChild(a);
     });
-    // Línea separadora y submenú "Propiedades de:" se añadirán dinámicamente después
 
-    // ==================== CONSTRUCCIÓN MENÚ INSERTAR ====================
+    // ==================== MENÚ INSERTAR ====================
+    const dropdownInsertar = document.getElementById('dropdownInsertar');
     const primitives = [
-        { name: 'Cubo', func: () => scene3D.createCube('Cubo') },
-        { name: 'Cilindro', func: () => scene3D.createCylinder('Cilindro') },
-        { name: 'Esfera', func: () => scene3D.createSphere('Esfera') },
-        { name: 'Cono', func: () => scene3D.createCone('Cono') },
-        { name: 'Toro', func: () => scene3D.createTorus('Toro') },
-        { name: 'Prisma Trapezoidal', func: () => scene3D.createTrapezoidalPrism('Prisma Trapezoidal') },
-        { name: 'Tetraedro', func: () => scene3D.createTetrahedron('Tetraedro') },
-        { name: 'Cilindro truncado', func: () => scene3D.createCylinderTruncated('Cilindro truncado') }
+        { name:"Cubo", i18nKey:"insertCube", func:()=>createCube("Cubo") },
+        { name:"Esfera", i18nKey:"insertSphere", func:()=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(0.5,32,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Esfera","sphere"); } },
+        { name:"Cilindro", i18nKey:"insertCylinder", func:()=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cilindro","cylinder"); } },
+        { name:"Cono", i18nKey:"insertCone", func:()=>{ const m=new THREE.Mesh(new THREE.ConeGeometry(0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cono","cone"); } },
+        { name:"Toro", i18nKey:"insertTorus", func:()=>{ const m=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.2,32,64), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Toro","torus"); } },
+        { name:"Cámara", i18nKey:"insertCamera", func:()=>createCameraObject() },
+        { name:"Luz", i18nKey:"insertLight", func:()=>createLightObject() }
     ];
     primitives.forEach(p => {
-        const a = document.createElement('a'); a.href = '#'; a.textContent = p.name;
-        a.addEventListener('click', (e) => { e.preventDefault(); p.func(); updateObjectList(); });
-        dropdownInsertarUI.appendChild(a);
+        const a = document.createElement('a'); a.href='#'; a.setAttribute('data-i18n', p.i18nKey); a.textContent = p.name;
+        a.addEventListener('click', (e) => { e.preventDefault(); p.func(); updateObjectListUI(); });
+        dropdownInsertar.appendChild(a);
     });
-    const loadModelItem = document.createElement('a'); loadModelItem.href = '#'; loadModelItem.textContent = 'Cargar modelo 3D...';
-    loadModelItem.addEventListener('click', (e) => { e.preventDefault(); triggerLoadModel(); });
-    dropdownInsertarUI.appendChild(loadModelItem);
-
-    // ==================== FUNCIONES AUXILIARES ====================
-    function triggerLoadModel() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.gltf,.glb,.obj,.stl';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file) { try { await scene3D.loadModel(file); updateObjectList(); } catch(err) { showCustomAlert('Error al cargar modelo.'); } }
-        };
+    const loadModelItem = document.createElement('a'); loadModelItem.href='#'; loadModelItem.setAttribute('data-i18n', 'loadModelOption'); loadModelItem.textContent='Cargar modelo 3D...';
+    loadModelItem.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const input = document.createElement('input'); input.type = 'file'; input.accept = '.gltf,.glb,.obj,.stl';
+        input.onchange = async () => { const file = input.files[0]; if(file){ try{ const mesh=await importModel(file); addObject(mesh, file.name, 'imported'); updateObjectListUI(); } catch(err){ showCustomAlert('Error: '+err.message); } } };
         input.click();
-    }
-    loadModelBtn.addEventListener('click', triggerLoadModel);
-    importModelBtn.addEventListener('click', triggerLoadModel);
-    exportSTLBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportSTL(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
-    exportGLTFBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportGLTF(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
-    exportOBJBtn.addEventListener('click', () => { const obj = scene3D.getSelectedObject(); if (obj) exporter.exportOBJ(obj.mesh, obj.name); else showCustomAlert('Selecciona un objeto.'); });
-    resetCameraBtn.addEventListener('click', () => scene3D.resetCamera());
-    toggleGridBtn.addEventListener('click', () => scene3D.toggleGrid());
-    newProjectBtn.addEventListener('click', () => { scene3D.getObjectList().forEach(obj => scene3D.removeObject(obj.id)); currentSelectedId = null; updateObjectList(); project.resetProject(); clipboardData = null; closePropertiesPanel(); updatePropertiesSubmenu(); });
+    });
+    dropdownInsertar.appendChild(loadModelItem);
 
-    // ==================== OPCIÓN SUPRIMIR (DELETE) ====================
-    async function deleteSelected() {
-        if (timeline && timeline.getSelectedKeyframeIndex && timeline.getSelectedKeyframeIndex() !== -1) {
-            timeline.removeSelectedKeyframe();
-            showCustomAlert('Keyframe eliminado');
-            return;
-        }
-        const obj = scene3D.getSelectedObject();
-        if (obj) {
-            if (confirm(t('deleteConfirm'))) removeObjectWithUndo(obj.id);
-        } else {
-            showCustomAlert(t('noObject'));
-        }
-    }
+    // ==================== ACCIONES DE MENÚ ARCHIVO Y VER ====================
+    document.getElementById('exportProject').addEventListener('click', (e) => { e.preventDefault(); exportProjectToZip(); });
+    document.getElementById('importProject').addEventListener('click', (e) => { e.preventDefault(); const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip'; input.onchange = async (ev) => { if(input.files[0]) await importProjectFromZip(input.files[0]); }; input.click(); });
+    document.getElementById('newProject').addEventListener('click', (e) => { e.preventDefault(); if(confirm("¿Crear nuevo proyecto? Se perderán los cambios no guardados.")) { for (let obj of [...objects]) removeObject(obj.id); deleteAllKeyframes("all"); createCube("Cubo"); recalcMaxTime(); updateTimelineUI(); } });
+    document.getElementById('exportSTL').addEventListener('click', (e) => { e.preventDefault(); exportSelectedSTL(); });
+    document.getElementById('exportGLTF').addEventListener('click', (e) => { e.preventDefault(); exportSelectedGLTF(); });
+    document.getElementById('resetCamera').addEventListener('click', (e) => { e.preventDefault(); resetCamera(); });
+    document.getElementById('toggleGrid').addEventListener('click', (e) => { e.preventDefault(); toggleGridVisibility(); });
+    document.getElementById('importModel').addEventListener('click', (e) => { e.preventDefault(); document.querySelector('#dropdownInsertar a:last-child').click(); });
+    document.getElementById('loadModelBtn').addEventListener('click', () => { document.querySelector('#dropdownInsertar a:last-child').click(); });
 
-    // ==================== UNDO/REDO, CLIPBOARD ====================
-    function copySelected() { const data = scene3D.getSelectedObjectData(); if (data) clipboardData = data; }
-    function cutSelected() { const obj = scene3D.getSelectedObject(); if (!obj) return; copySelected(); removeObjectWithUndo(obj.id); }
-    function pasteSelected() { if (!clipboardData) return; const newId = scene3D.createObjectFromData(clipboardData, clipboardData.name + '_copia'); scene3D.selectObject(newId); currentSelectedId = newId; updateObjectList(); showProperties(newId); }
-    function selectAll() { const objects = scene3D.getObjectList(); if (objects.length) scene3D.selectObject(objects[0].id); }
-    function recordAction(action) { if (!isUndoRedo) { undoStack.push(action); redoStack = []; if (undoStack.length > 100) undoStack.shift(); } }
-    function undo() { if (undoStack.length === 0) return; isUndoRedo = true; const action = undoStack.pop(); action.undo(); redoStack.push(action); isUndoRedo = false; clipboardData = null; updateObjectList(); if (currentSelectedId) showProperties(currentSelectedId); }
-    function redo() { if (redoStack.length === 0) return; isUndoRedo = true; const action = redoStack.pop(); action.redo(); undoStack.push(action); isUndoRedo = false; clipboardData = null; updateObjectList(); if (currentSelectedId) showProperties(currentSelectedId); }
-    function removeObjectWithUndo(id) { const data = scene3D.getObjectData(id); if (data) recordAction({ undo: () => { scene3D.createObjectFromData(data, data.name); updateObjectList(); }, redo: () => { scene3D.removeObject(id); updateObjectList(); } }); scene3D.removeObject(id); if (currentSelectedId === id) { currentSelectedId = null; closePropertiesPanel(); } updateObjectList(); setTimeout(() => updatePropertiesSubmenu(), 10); }
-
-    // ==================== ATEJOS DE TECLADO ====================
-    Mousetrap.bind(['w', 'W'], () => { const cam = scene3D.getCamera(); if (cam) { const f = new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion); f.y = 0; f.normalize(); cam.position.addScaledVector(f, 0.2); scene3D.updateCameraControls(); } return false; });
-    Mousetrap.bind(['s', 'S'], () => { const cam = scene3D.getCamera(); if (cam) { const b = new THREE.Vector3(0,0,1).applyQuaternion(cam.quaternion); b.y = 0; b.normalize(); cam.position.addScaledVector(b, 0.2); scene3D.updateCameraControls(); } return false; });
-    Mousetrap.bind(['a', 'A'], () => { const cam = scene3D.getCamera(); if (cam) { const l = new THREE.Vector3(-1,0,0).applyQuaternion(cam.quaternion); l.y = 0; l.normalize(); cam.position.addScaledVector(l, 0.2); scene3D.updateCameraControls(); } return false; });
-    Mousetrap.bind(['d', 'D'], () => { const cam = scene3D.getCamera(); if (cam) { const r = new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion); r.y = 0; r.normalize(); cam.position.addScaledVector(r, 0.2); scene3D.updateCameraControls(); } return false; });
-    Mousetrap.bind('ctrl+z', () => { undo(); return false; });
-    Mousetrap.bind('ctrl+y', () => { redo(); return false; });
-    Mousetrap.bind('ctrl+x', () => { cutSelected(); return false; });
-    Mousetrap.bind('ctrl+c', () => { copySelected(); return false; });
-    Mousetrap.bind('ctrl+v', () => { pasteSelected(); return false; });
-    Mousetrap.bind('ctrl+a', () => { selectAll(); return false; });
-    Mousetrap.bind('del', () => { deleteSelected(); return false; });
-    Mousetrap.bind('ctrl+s', () => { if (timeline) timeline.play(); return false; });
-    Mousetrap.bind('ctrl+t', () => { if (timeline) timeline.stop(); return false; });
-
-    // ==================== INICIALIZACIÓN ====================
-    project.initProject(() => scene3D.getSelectedObject()?.mesh, (pos, rot, scale) => { const obj = scene3D.getSelectedObject(); if(obj){ obj.mesh.position.set(pos.x,pos.y,pos.z); obj.mesh.rotation.set(rot.x,rot.y,rot.z); obj.mesh.scale.set(scale.x,scale.y,scale.z); } }, () => scene3D.getAllMeshes());
-    loadTimeline();
-    scene3D.onSelectionChange((id) => { currentSelectedId = id; updateObjectList(); if(id) showProperties(id); else closePropertiesPanel(); });
-    scene3D.onObjectListChange(() => { updateObjectList(); if(currentSelectedId && !scene3D.getObject(currentSelectedId)) { currentSelectedId = null; closePropertiesPanel(); } else if(currentSelectedId) showProperties(currentSelectedId); });
-    scene3D.setOnObjectTransform(() => { if(currentSelectedId) showProperties(currentSelectedId); });
-
-    // Loop validación lecciones
-    function validationLoop() { updateLessonValidationStatus(); requestAnimationFrame(validationLoop); }
-    validationLoop();
-
-    // Modal personalizado
+    // ==================== MODAL PERSONALIZADO ====================
     const modalOverlay = document.getElementById('modalOverlay');
     const modal = document.getElementById('customModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -778,12 +2161,24 @@
             document.getElementById('modalOk').onclick = onOk;
             document.getElementById('modalCancel').onclick = onCancel;
             if (!showCancel) document.getElementById('modalCancel').style.display = 'none';
+            else document.getElementById('modalCancel').style.display = 'inline-block';
         });
+        function closeModal() { modalOverlay.style.display = 'none'; modal.style.display = 'none'; }
     }
-    function closeModal() { modalOverlay.style.display = 'none'; modal.style.display = 'none'; }
     window.showCustomAlert = (msg) => showCustomModal('Información', `<p>${msg}</p>`, false);
 
-    requestAnimationFrame(() => { updateObjectList(); setTimeout(updateObjectList, 200); });
+    // ==================== INICIALIZACIÓN ====================
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        updateDynamicGrid();
+        renderer.render(scene, mainCamera);
+    }
+    animate();
+    createCube('Cubo');
+    updateObjectListUI();
+    updateUIStrings();
+    recalcMaxTime(); // inicializar el maxTime dinámicamente
 </script>
 </body>
 </html>

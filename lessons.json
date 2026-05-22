@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "title": { "es": "Mover un objeto", "en": "Move an object" },
+        "description": { "es": "Selecciona el cubo (haz clic en él o en la lista) y muévelo usando las flechas del widget de transformación. Colócalo en X=2, Y=0, Z=0.", "en": "Select the cube (click on it or in the list) and move it using the transform widget arrows. Place it at X=2, Y=0, Z=0." },
+        "content": "El widget de transformación aparece al seleccionar un objeto. Usa las flechas roja (X), verde (Y) y azul (Z) para desplazar el objeto."
+    },
+    {
+        "id": 2,
+        "title": { "es": "Cambiar color", "en": "Change color" },
+        "description": { "es": "Con el cubo seleccionado, abre el panel de propiedades (se desliza a la derecha) y cambia su color a rojo usando el selector de color.", "en": "With the cube selected, open the properties panel (it slides in from the right) and change its color to red using the color picker." },
+        "content": "El panel de propiedades se abre automáticamente al seleccionar un objeto. También puedes usar el botón '📋' en la lista para ver propiedades flotantes."
+    },
+    {
+        "id": 3,
+        "title": { "es": "Añadir un keyframe", "en": "Add a keyframe" },
+        "description": { "es": "Selecciona un objeto, mueve el cursor rojo de la línea de tiempo a 1 segundo y haz clic en '➕ Añadir Keyframe'. Elige el objeto en el modal. Verás un punto en su pista.", "en": "Select an object, move the red playhead to 1 second and click '➕ Add Keyframe'. Choose the object in the modal. You'll see a dot on its track." },
+        "content": "Los keyframes guardan la posición/rotación del objeto en un momento determinado. Al reproducir, el objeto se moverá suavemente entre keyframes."
+    },
+    {
+        "id": 4,
+        "title": { "es": "Reproducir animación", "en": "Play animation" },
+        "description": { "es": "Después de añadir al menos dos keyframes en diferentes tiempos, presiona ▶ Reproducir para ver la animación. Ajusta la velocidad con el control deslizante.", "en": "After adding at least two keyframes at different times, press ▶ Play to see the animation. Adjust speed with the slider." },
+        "content": "La interpolación entre keyframes es lineal. Puedes detener la animación con ⏹ Detener y reiniciar moviendo el cursor."
+    },
+    {
+        "id": 5,
+        "title": { "es": "Importar modelo 3D", "en": "Import 3D model" },
+        "description": { "es": "Usa Archivo → Importar modelo 3D para cargar archivos GLTF, GLB, OBJ o STL. El modelo se escalará automáticamente para encajar en la escena.", "en": "Use File → Import 3D model to load GLTF, GLB, OBJ or STL files. The model will be automatically scaled to fit the scene." },
+        "content": "Los modelos importados se añaden a la lista de objetos y se pueden animar como cualquier otro objeto."
+    },
+    {
+        "id": 6,
+        "title": { "es": "Exportar a STL", "en": "Export to STL" },
+        "description": { "es": "Selecciona un objeto y ve a Archivo → Exportar a STL. Se descargará un archivo listo para impresión 3D.", "en": "Select an object and go to File → Export to STL. A file ready for 3D printing will be downloaded." },
+        "content": "El formato STL es ampliamente soportado por impresoras 3D y software de laminado (slicers)."
+    },
+    {
+        "id": 7,
+        "title": { "es": "Aplicar textura", "en": "Apply texture" },
+        "description": { "es": "En el panel de propiedades, selecciona una textura (madera, metal, piedra, etc.) o carga una imagen personalizada.", "en": "In the properties panel, choose a texture (wood, metal, stone, etc.) or upload a custom image." },
+        "content": "Las texturas se aplican al material del objeto. Puedes combinarlas con el color base."
+    },
+    {
+        "id": 8,
+        "title": { "es": "Usar el panel de efectos", "en": "Use the effects panel" },
+        "description": { "es": "Haz clic en ✨ Efectos en el panel de propiedades para ajustar opacidad, rugosidad, metalicidad y emisión del material.", "en": "Click ✨ Effects in the properties panel to adjust opacity, roughness, metalness and emission of the material." },
+        "content": "Estos parámetros cambian la apariencia visual del objeto, creando efectos de vidrio, metal o superficies mate."
+    },
+    {
+        "id": 9,
+        "title": { "es": "Gestionar keyframes", "en": "Manage keyframes" },
+        "description": { "es": "En la línea de tiempo, a la derecha hay una lista de keyframes del objeto seleccionado. Puedes eliminar cualquier keyframe haciendo clic en '✖'.", "en": "On the right side of the timeline, there is a list of keyframes for the selected object. You can delete any keyframe by clicking '✖'." },
+        "content": "Eliminar un keyframe hace que la animación se interpole entre los keyframes restantes."
+    },
+    {
+        "id": 10,
+        "title": { "es": "Modo claro/oscuro", "en": "Light/Dark mode" },
+        "description": { "es": "Ve a Configuración → Modo Claro/Oscuro para cambiar el tema de la interfaz y el fondo de la vista 3D.", "en": "Go to Configuration → Light/Dark mode to change the UI theme and the 3D view background." },
+        "content": "El modo claro es ideal para entornos con mucha luz ambiental. Los colores se ajustan automáticamente."
+    }
+]
