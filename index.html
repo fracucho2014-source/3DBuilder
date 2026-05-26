@@ -162,31 +162,28 @@
         .introjs-button { background-color: var(--accent) !important; color: white !important; border: none !important; text-shadow: none !important; }
         .introjs-button:hover { background-color: var(--accent-hover) !important; }
         .introjs-skipbutton { color: var(--text-primary) !important; }
-        .skip-tour-btn {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            z-index: 10001;
+        .skip-tour-custom {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
             background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
             color: white;
             border: 1px solid rgba(255,255,255,0.3);
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: normal;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            font-size: 11px;
+            z-index: 10002;
             transition: all 0.2s;
         }
-        .skip-tour-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.02); }
+        .skip-tour-custom:hover { background: rgba(0,0,0,0.9); }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/blockly@11.1.1/blockly.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/7.2.0/intro.min.js"></script>
 </head>
 <body>
 <div class="app-container">
-    <!-- ==================== MENÚ PRINCIPAL ==================== -->
+    <!-- MENÚ PRINCIPAL -->
     <div class="menu-bar">
         <div class="menu-left">
             <div class="menu" data-menu="archivo"><span data-i18n="menuArchivo">Archivo</span>
@@ -334,8 +331,6 @@
         <div><button id="floatModalClose" data-i18n="close">Cerrar</button></div>
     </div>
 
-    <button id="skipTourBtn" class="skip-tour-btn" style="display: none;">⏭️ Saltar tour</button>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js"></script>
@@ -353,7 +348,7 @@
     import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
     import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
-    // ==================== TRADUCCIONES (declaradas al principio) ====================
+    // ==================== TRADUCCIONES ====================
     const i18n = {
         es: {
             menuArchivo: "Archivo", menuEditar: "Editar", menuInsertar: "Insertar", menuVer: "Ver", menuConfig: "Configuración", menuMore: "Más",
@@ -373,7 +368,9 @@
             insertCamera: "Cámara", insertLight: "Luz", loadModelOption: "Cargar modelo 3D...",
             exportAnim: "Exportar video", info: "Información", changeTimelineMode: "Cambiar modo de timeline",
             version: "Versión", features: "Características destacadas", technologies: "Tecnologías", developer: "Desarrollador", year: "Año", license: "Licencia",
-            // Tour
+            confirmDelete: "Confirmar?",
+            deleteConfirmMsg: "¿Eliminar objeto seleccionado?",
+            move: "Mover objeto", rotate: "Rotar objeto", scale: "Escalar objeto", copy: "Copiar", paste: "Pegar", delete: "Eliminar",
             tourObjectsIntro: "Aquí se listan todos los objetos 3D que has creado o importado. Puedes seleccionarlos, ver sus propiedades o eliminarlos.",
             tourPropertiesIntro: "Al seleccionar un objeto, aquí puedes modificar su nombre, color, posición, escala y rotación. También puedes aplicar texturas y efectos.",
             tourAddKeyframeIntro: "Añade keyframes en la línea de tiempo para animar la posición y rotación de los objetos a lo largo del tiempo.",
@@ -407,7 +404,9 @@
             insertCamera: "Camera", insertLight: "Light", loadModelOption: "Load 3D model...",
             exportAnim: "Export video", info: "Information", changeTimelineMode: "Switch timeline mode",
             version: "Version", features: "Main features", technologies: "Technologies", developer: "Developer", year: "Year", license: "License",
-            // Tour
+            confirmDelete: "Confirm?",
+            deleteConfirmMsg: "Delete selected object?",
+            move: "Move object", rotate: "Rotate object", scale: "Scale object", copy: "Copy", paste: "Paste", delete: "Delete",
             tourObjectsIntro: "Here you can see all 3D objects you have created or imported. Select, edit or delete them.",
             tourPropertiesIntro: "When an object is selected, you can change its name, color, position, scale, rotation, textures and particle effects.",
             tourAddKeyframeIntro: "Add keyframes on the timeline to animate position and rotation over time.",
@@ -427,7 +426,7 @@
     let currentLang = 'es';
     function t(key) { return i18n[currentLang][key] || key; }
 
-    // ==================== DESCRIPCIÓN LARGA (INCORPORADA) ====================
+    // ==================== DESCRIPCIÓN LARGA ====================
     const descripcionLarga = `🌟 3DBuilder es una aplicación web de creación y animación 3D que combina la potencia de Three.js con una interfaz intuitiva, ofreciendo dos formas de animar: una línea de tiempo clásica basada en keyframes y un editor visual por bloques estilo Scratch. Todo funciona en tiempo real, sin necesidad de instalar nada, y está pensado tanto para principiantes como para usuarios avanzados.
 
 🧩 Características principales
@@ -476,91 +475,6 @@
     const STORAGE_KEY = 'listaKeyframesCodes';
     localStorage.removeItem(STORAGE_KEY);
     console.log("🗑️ Keyframes eliminados al iniciar.");
-
-    // ==================== EXPORTACIÓN DE VÍDEO ====================
-    async function exportAnimationFromCamera(cameraMesh, duration, speed, onProgress, scene, setCurrentTime, gridGroup) {
-        const originalGridVisible = gridGroup.visible;
-        const originalCameraVisible = cameraMesh.visible;
-        gridGroup.visible = false;
-        cameraMesh.visible = false;
-        const fps = 30;
-        const width = 1280, height = 720;
-        const realDuration = duration / speed;
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const offscreenRenderer = new THREE.WebGLRenderer({ canvas, preserveDrawingBuffer: true, alpha: false });
-        offscreenRenderer.setSize(width, height);
-        offscreenRenderer.setClearColor(0x000000);
-        const tempCamera = new THREE.PerspectiveCamera(60, width/height, 0.1, 1000);
-        const stream = canvas.captureStream(fps);
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `animacion_${Date.now()}.webm`;
-            a.click(); URL.revokeObjectURL(url);
-            offscreenRenderer.dispose();
-            gridGroup.visible = originalGridVisible;
-            cameraMesh.visible = originalCameraVisible;
-            if (onProgress) onProgress(100);
-        };
-        mediaRecorder.start();
-        const totalFrames = Math.ceil(realDuration * fps);
-        for (let frame = 0; frame <= totalFrames; frame++) {
-            const tReal = frame / fps;
-            const tAnim = Math.min(duration, tReal * speed);
-            setCurrentTime(tAnim);
-            const forward = new THREE.Vector3(0,0,1).applyQuaternion(cameraMesh.quaternion);
-            const lensOffset = new THREE.Vector3(0,0.1,0.45).applyQuaternion(cameraMesh.quaternion);
-            tempCamera.position.copy(cameraMesh.position.clone().add(lensOffset));
-            tempCamera.lookAt(cameraMesh.position.clone().add(forward.multiplyScalar(2)));
-            offscreenRenderer.render(scene, tempCamera);
-            await new Promise(r => requestAnimationFrame(r));
-            if (onProgress) onProgress((frame/totalFrames)*100);
-        }
-        mediaRecorder.stop();
-    }
-
-    // ==================== GESTIÓN DE PROYECTOS ZIP (simplificada) ====================
-    async function exportProjectToZip() { showCustomAlert("Función de exportación ZIP disponible en la versión completa"); }
-    async function importProjectFromZip(file) { showCustomAlert("Importación ZIP disponible en la versión completa"); }
-    async function captureProjectData() { return {}; }
-    async function restoreProjectData(projectData) { }
-
-    // ==================== KF-BACKEND ====================
-    function loadAllKeyframes() { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : {}; }
-    function saveAllKeyframes(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-    function getKeyframes(objectName) { const all = loadAllKeyframes(); return all[objectName] || []; }
-    function addKeyframe(objectName, time, position, rotation) {
-        const all = loadAllKeyframes();
-        if (!all[objectName]) all[objectName] = [];
-        let code; do { code = Math.random().toString(36).substr(2, 5); } while (all[objectName].some(kf => kf.code === code));
-        all[objectName].push({ code, time, pos: { x: position.x, y: position.y, z: position.z }, rot: { x: rotation.x, y: rotation.y, z: rotation.z } });
-        all[objectName].sort((a,b) => a.time - b.time);
-        saveAllKeyframes(all);
-        recalcMaxTime();
-        return code;
-    }
-    function removeKeyframe(objectName, code) {
-        const all = loadAllKeyframes();
-        if (!all[objectName]) return false;
-        all[objectName] = all[objectName].filter(kf => kf.code !== code);
-        if (all[objectName].length === 0) delete all[objectName];
-        saveAllKeyframes(all);
-        recalcMaxTime();
-        return true;
-    }
-    function deleteAllKeyframes(objectName) {
-        const all = loadAllKeyframes();
-        if (objectName === "all") for (let k in all) delete all[k];
-        else delete all[objectName];
-        saveAllKeyframes(all);
-        recalcMaxTime();
-    }
-    function importKeyframes(data) { saveAllKeyframes(data); recalcMaxTime(); }
 
     // ==================== ESCENA 3D ====================
     const scene = new THREE.Scene();
@@ -694,7 +608,6 @@
     let isPlaying = false;
     let config = { maxTime: 10, speed: 1 };
     let animationFrameId = null;
-    
     function createObjectTrack(objMesh, objectName) {
         let keyframes = [];
         const saved = getKeyframes(objectName);
@@ -736,7 +649,6 @@
             keyframes
         };
     }
-    
     function extendTimelineIfNeeded(newTime) {
         if (newTime >= config.maxTime - 0.01) {
             const increment = 5;
@@ -745,7 +657,6 @@
             showCustomAlert(`⏩ Timeline extendida a ${config.maxTime.toFixed(1)} segundos`, false);
         }
     }
-    
     function recalcMaxTime() {
         let max = 0;
         tracks.forEach(t => {
@@ -757,7 +668,6 @@
         else config.maxTime = max;
         updateTimelineUI();
     }
-    
     function drawRuler() {
         const rulerDiv = document.querySelector('#classicTimeline .timeline-ruler');
         if (!rulerDiv) return;
@@ -788,7 +698,6 @@
             rulerDiv.appendChild(label);
         }
     }
-    
     function updateTimelineUI() {
         drawRuler();
         const tracksDiv = document.querySelector('#classicTimeline .timeline-tracks');
@@ -796,7 +705,6 @@
         const container = document.querySelector('#classicTimeline .timeline-canvas');
         const width = container ? container.clientWidth - 10 : 0;
         tracksDiv.innerHTML = '';
-        
         tracks.forEach(track => {
             const trackDiv = document.createElement('div');
             trackDiv.className = 'timeline-track';
@@ -817,19 +725,16 @@
             }
             tracksDiv.appendChild(trackDiv);
         });
-        
         const playhead = document.createElement('div');
         playhead.className = 'playhead';
         if (width > 0 && config.maxTime > 0) {
             playhead.style.left = (currentTime / config.maxTime) * width + 'px';
         }
         tracksDiv.appendChild(playhead);
-        
         const globalSpan = document.querySelector('#classicTimeline #globalTime');
         if (globalSpan) globalSpan.innerText = currentTime.toFixed(2) + 's';
         updateKeyframeListUI();
     }
-    
     function updateKeyframeListUI() {
         const contentDiv = document.getElementById('keyframeListContent');
         if (!contentDiv) return;
@@ -861,7 +766,6 @@
             contentDiv.appendChild(item);
         });
     }
-    
     function setCurrentTime(time) {
         extendTimelineIfNeeded(time);
         time = Math.min(config.maxTime, Math.max(0, time));
@@ -872,7 +776,6 @@
         });
         updateTimelineUI();
     }
-    
     function playAnimation() {
         if (isPlaying) return;
         if (currentTime >= config.maxTime - 0.001) setCurrentTime(0);
@@ -895,7 +798,6 @@
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
         animationFrameId = requestAnimationFrame(step);
     }
-    
     function stopAnimation() {
         isPlaying = false;
         if (animationFrameId) {
@@ -903,20 +805,17 @@
             animationFrameId = null;
         }
     }
-    
     async function addTrackToTimeline(name, mesh) {
         const trackObject = createObjectTrack(mesh, name);
         tracks.push({ name, trackObject });
         recalcMaxTime();
         updateTimelineUI();
     }
-    
     function removeTrackFromTimeline(name) {
         tracks = tracks.filter(t => t.name !== name);
         recalcMaxTime();
         updateTimelineUI();
     }
-    
     async function requestAddKeyframe() {
         if (tracks.length === 0) {
             showCustomAlert(t('noObjectSelected'));
@@ -932,7 +831,6 @@
         recalcMaxTime();
         showCustomAlert(`Keyframe añadido a "${selectedName}" en ${currentTime.toFixed(2)}s`);
     }
-    
     function showObjectSelectionModal(names) {
         return new Promise((resolve) => {
             let modal = document.getElementById('selectionModal');
@@ -973,7 +871,6 @@
             modalDiv.style.display = 'block';
         });
     }
-    
     function setupTimelineEvents() {
         const addBtn = document.querySelector('#timelineAddBtn');
         if (addBtn) addBtn.addEventListener('click', () => requestAddKeyframe());
@@ -1045,7 +942,6 @@
             });
         }
     }
-    
     setupTimelineEvents();
     updateTimelineUI();
     new ResizeObserver(() => updateTimelineUI()).observe(document.querySelector('#classicTimeline .timeline-canvas'));
@@ -1118,13 +1014,16 @@
             const propsBtn = document.createElement('button'); propsBtn.textContent = '📋'; propsBtn.className = 'props-btn';
             propsBtn.addEventListener('click', (e) => { e.stopPropagation(); showFloatProperties(obj.id); });
             const delBtn = document.createElement('button'); delBtn.textContent = '❌'; delBtn.className = 'del-btn';
-            delBtn.addEventListener('click', (e) => { e.stopPropagation(); removeObject(obj.id); });
+            delBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const confirmed = await showConfirmDialog(t('deleteConfirmMsg'));
+                if (confirmed) removeObject(obj.id);
+            });
             li.appendChild(propsBtn); li.appendChild(delBtn);
             li.addEventListener('click', () => selectObject(obj.id));
             listEl.appendChild(li);
         });
     }
-    
     function getSelectedObjectProperties() {
         const obj = objects.find(o => o.id === selectedObjectId);
         if(!obj) return null;
@@ -1135,7 +1034,6 @@
         if(obj.particleSystem) { particleEnabled = obj.particleSystem.enabled; particleRate = obj.particleSystem.emitRate; particleSpeed = obj.particleSystem.particleSpeed; particleDistance = obj.particleSystem.maxDistance; }
         return { name: obj.name, position: mesh.position.clone(), scale: mesh.scale.clone(), rotation: mesh.rotation.clone(), color, opacity, metalness, emissive, particleEnabled, particleRate, particleSpeed, particleDistance };
     }
-    
     function updateSelectedObjectProperty(prop, value) {
         const obj = objects.find(o => o.id === selectedObjectId);
         if(!obj) return;
@@ -1157,7 +1055,6 @@
         updateObjectListUI();
         showProperties(selectedObjectId);
     }
-    
     function showProperties(objectId) {
         const props = getSelectedObjectProperties();
         if(!props) {
@@ -1186,9 +1083,7 @@
         document.getElementById('rotY').onchange = (e) => updateSelectedObjectProperty('rotation', { x: props.rotation.x, y: parseFloat(e.target.value), z: props.rotation.z });
         document.getElementById('rotZ').onchange = (e) => updateSelectedObjectProperty('rotation', { x: props.rotation.x, y: props.rotation.y, z: parseFloat(e.target.value) });
     }
-    
     function closePropertiesPanel() { document.getElementById('propertiesPanel').classList.remove('open'); }
-    
     function showFloatProperties(objectId) {
         const obj = objects.find(o => o.id === objectId);
         if(!obj) return;
@@ -1267,10 +1162,19 @@
         reader.readAsDataURL(file);
     });
 
-    // ==================== LECCIONES ====================
-    let lessons = [];
-    async function loadLessons() { lessons = [{ id:1, title:{ es:"Mover un objeto", en:"Move an object" }, description:{ es:"Selecciona el cubo y muévelo a X=2,Y=0,Z=0", en:"Select the cube and move it to X=2,Y=0,Z=0" } }]; }
-    await loadLessons();
+    // ==================== LECCIONES (10 lecciones) ====================
+    let lessons = [
+        { id:1, title:{ es:"Mover un objeto", en:"Move an object" }, description:{ es:"Selecciona el cubo y muévelo a X=2,Y=0,Z=0", en:"Select the cube and move it to X=2,Y=0,Z=0" } },
+        { id:2, title:{ es:"Cambiar color", en:"Change color" }, description:{ es:"Cambia el color del cubo a rojo", en:"Change the cube's color to red" } },
+        { id:3, title:{ es:"Añadir keyframe", en:"Add keyframe" }, description:{ es:"Añade un keyframe al objeto actual", en:"Add a keyframe to the current object" } },
+        { id:4, title:{ es:"Rotar un objeto", en:"Rotate an object" }, description:{ es:"Rota el cubo 45 grados en Y", en:"Rotate the cube 45 degrees on Y" } },
+        { id:5, title:{ es:"Escalar un objeto", en:"Scale an object" }, description:{ es:"Escala el cubo al doble (factor 2)", en:"Scale the cube to double (factor 2)" } },
+        { id:6, title:{ es:"Aplicar textura", en:"Apply texture" }, description:{ es:"Carga una imagen como textura para el cubo", en:"Load an image as texture for the cube" } },
+        { id:7, title:{ es:"Activar partículas", en:"Activate particles" }, description:{ es:"Activa las partículas negras para el objeto seleccionado", en:"Enable black particles for the selected object" } },
+        { id:8, title:{ es:"Crear una cámara", en:"Create a camera" }, description:{ es:"Inserta una cámara en la escena", en:"Insert a camera into the scene" } },
+        { id:9, title:{ es:"Animación por bloques", en:"Block animation" }, description:{ es:"Crea una animación simple con bloques (mover y esperar)", en:"Create a simple animation with blocks (move and wait)" } },
+        { id:10, title:{ es:"Exportar vídeo", en:"Export video" }, description:{ es:"Selecciona una cámara y exporta la animación como vídeo", en:"Select a camera and export the animation as video" } }
+    ];
     let currentLessonIndex = 0;
     const lessonFloatPanel = document.getElementById('lessonFloatPanel');
     const lessonFloatTitle = document.getElementById('lessonFloatTitle');
@@ -1285,8 +1189,10 @@
         lessonFloatTitle.innerText = titleText;
         lessonFloatContent.innerHTML = `<h4>${titleText}</h4><p>${descText}</p>`;
         lessonPagination.innerHTML = `<button id="prevLessonBtn" ${currentLessonIndex===0?'disabled':''}>${t('prevLesson')}</button><span>${currentLessonIndex+1}/${lessons.length}</span><button id="nextLessonBtn" ${currentLessonIndex===lessons.length-1?'disabled':''}>${t('nextLesson')}</button>`;
-        document.getElementById('prevLessonBtn')?.addEventListener('click', () => { if(currentLessonIndex>0){ currentLessonIndex--; updateLessonPanelContent(); } });
-        document.getElementById('nextLessonBtn')?.addEventListener('click', () => { if(currentLessonIndex<lessons.length-1){ currentLessonIndex++; updateLessonPanelContent(); } });
+        const prevBtn = document.getElementById('prevLessonBtn');
+        const nextBtn = document.getElementById('nextLessonBtn');
+        if (prevBtn) prevBtn.onclick = () => { if(currentLessonIndex>0){ currentLessonIndex--; updateLessonPanelContent(); } };
+        if (nextBtn) nextBtn.onclick = () => { if(currentLessonIndex<lessons.length-1){ currentLessonIndex++; updateLessonPanelContent(); } };
     }
     openLessonsBtn.addEventListener('click', () => { updateLessonPanelContent(); lessonFloatPanel.style.display = 'block'; lessonFloatPanel.style.left = '150px'; lessonFloatPanel.style.top = '100px'; });
     closeLessonFloat.addEventListener('click', () => { lessonFloatPanel.style.display = 'none'; });
@@ -1320,24 +1226,206 @@
     window.addEventListener("mouseup", () => { isDraggingCam = false; floatPanelCam.style.cursor = "default"; });
     let collapsedCam = false;
     toggleBtnCam.addEventListener("click", () => { collapsedCam = !collapsedCam; floatContentCam.style.display = collapsedCam ? "none" : "block"; toggleBtnCam.innerText = collapsedCam ? "▲" : "▼"; });
-    document.getElementById("exportAnimationBtn").addEventListener("click", async () => {
-        if(!currentPreviewCameraObj) { showCustomAlert(t('exportAnim') + ": " + t('noObjectSelected')); return; }
-        if(config.maxTime <= 0) { showCustomAlert("La duración de la animación es cero."); return; }
-        showCustomAlert("Preparando exportación...");
-        const progressBar = document.getElementById("videoProgressBar");
-        const progressFill = document.getElementById("videoProgressFill");
-        progressBar.style.display = "block";
-        try { await exportAnimationFromCamera(currentPreviewCameraObj, config.maxTime, config.speed, (percent) => { progressFill.style.width = percent + "%"; }, scene, setCurrentTime, gridGroup); } catch(err) { console.error(err); showCustomAlert("Error: " + err.message); } finally { progressBar.style.display = "none"; }
-    });
 
+    // ==================== FUNCIONES AUXILIARES ====================
+    function loadAllKeyframes() { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : {}; }
+    function saveAllKeyframes(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function getKeyframes(objectName) { const all = loadAllKeyframes(); return all[objectName] || []; }
+    function addKeyframe(objectName, time, position, rotation) {
+        const all = loadAllKeyframes();
+        if (!all[objectName]) all[objectName] = [];
+        let code; do { code = Math.random().toString(36).substr(2, 5); } while (all[objectName].some(kf => kf.code === code));
+        all[objectName].push({ code, time, pos: { x: position.x, y: position.y, z: position.z }, rot: { x: rotation.x, y: rotation.y, z: rotation.z } });
+        all[objectName].sort((a,b) => a.time - b.time);
+        saveAllKeyframes(all);
+        recalcMaxTime();
+        return code;
+    }
+    function removeKeyframe(objectName, code) {
+        const all = loadAllKeyframes();
+        if (!all[objectName]) return false;
+        all[objectName] = all[objectName].filter(kf => kf.code !== code);
+        if (all[objectName].length === 0) delete all[objectName];
+        saveAllKeyframes(all);
+        recalcMaxTime();
+        return true;
+    }
+    function deleteAllKeyframes(objectName) {
+        const all = loadAllKeyframes();
+        if (objectName === "all") for (let k in all) delete all[k];
+        else delete all[objectName];
+        saveAllKeyframes(all);
+        recalcMaxTime();
+    }
+    function importKeyframes(data) { saveAllKeyframes(data); recalcMaxTime(); }
+    async function exportProjectToZip() { showCustomAlert("Función de exportación ZIP disponible en la versión completa"); }
+    async function importProjectFromZip(file) { showCustomAlert("Importación ZIP disponible en la versión completa"); }
+    async function importModel(file) {
+        return new Promise((resolve, reject) => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const url = URL.createObjectURL(file);
+            let loader;
+            if (ext === 'gltf' || ext === 'glb') loader = new GLTFLoader();
+            else if (ext === 'obj') loader = new OBJLoader();
+            else if (ext === 'stl') loader = new STLLoader();
+            else reject(new Error('Formato no soportado'));
+            loader.load(url, (result) => {
+                URL.revokeObjectURL(url);
+                let model;
+                if (result.scene) model = result.scene;
+                else if (result instanceof THREE.Group) model = result;
+                else if (result instanceof THREE.BufferGeometry) { const material = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.6 }); model = new THREE.Mesh(result, material); }
+                else model = result;
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.0 / maxDim;
+                model.scale.set(scale, scale, scale);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center.clone().multiplyScalar(scale));
+                model.traverse(child => { if (child.isMesh) child.castShadow = true; });
+                model.userData.originalFileData = file;
+                model.modelFormat = ext;
+                resolve(model);
+            }, undefined, (error) => { URL.revokeObjectURL(url); reject(error); });
+        });
+    }
+    function exportSelectedSTL() { const obj = objects.find(o => o.id === selectedObjectId); if(!obj) { showCustomAlert(t('selectObjectMsg')); return; } const exporter = new STLExporter(); const stlString = exporter.parse(obj.mesh, { binary: false }); const blob = new Blob([stlString], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${obj.name}.stl`; a.click(); URL.revokeObjectURL(a.href); }
+    function exportSelectedGLTF() { const obj = objects.find(o => o.id === selectedObjectId); if(!obj) { showCustomAlert(t('selectObjectMsg')); return; } const exporter = new GLTFExporter(); exporter.parse(obj.mesh, (result) => { const jsonString = JSON.stringify(result, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${obj.name}.gltf`; a.click(); URL.revokeObjectURL(a.href); }, { binary: false }); }
+    function resetCamera() { mainCamera.position.set(8,6,12); controls.target.set(0,0,0); controls.update(); }
+    function createCube(name) { const geometry = new THREE.BoxGeometry(1,1,1); const material = new THREE.MeshStandardMaterial({ color: 0x5f91d7, metalness: 0.7 }); const mesh = new THREE.Mesh(geometry, material); return addObject(mesh, name, 'cube'); }
+    function createCameraObject() { const group = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.8), new THREE.MeshStandardMaterial({ color: 0x888888 })); body.position.y=0; const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.1,16), new THREE.MeshStandardMaterial({ color: 0x333333 })); lens.rotation.x=Math.PI/2; lens.position.z=0.45; lens.position.y=0.1; const top = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.1,0.4), new THREE.MeshStandardMaterial({ color: 0xaaaaaa })); top.position.y=0.25; group.add(body,lens,top); return addObject(group, 'Cámara', 'camera'); }
+    function createLightObject() { const light = new THREE.PointLight(0xffffff, 1); return addObject(light, 'Luz', 'light'); }
+    function setupDropdowns() { const menus = document.querySelectorAll('.menu'); let active = null; menus.forEach(menu => { const dropdown = menu.querySelector('.dropdown'); if(!dropdown) return; menu.addEventListener('click', (e) => { e.stopPropagation(); if(active === dropdown) { dropdown.style.display = 'none'; active = null; } else { if(active) active.style.display = 'none'; dropdown.style.display = 'block'; active = dropdown; } }); }); document.addEventListener('click', () => { if(active) { active.style.display = 'none'; active = null; } }); }
+    setupDropdowns();
+    const dropdownEditar = document.getElementById('dropdownEditar');
+    const editActions = [
+        { text: t('move'), action: () => { if(selectedObjectId) transformControls.setMode('translate'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "move" },
+        { text: t('rotate'), action: () => { if(selectedObjectId) transformControls.setMode('rotate'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "rotate" },
+        { text: t('scale'), action: () => { if(selectedObjectId) transformControls.setMode('scale'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "scale" },
+        { text: t('copy'), action: () => { const obj=objects.find(o=>o.id===selectedObjectId); if(obj) localStorage.setItem('clipboard',JSON.stringify(obj)); }, i18nKey: "copy" },
+        { text: t('paste'), action: () => { const data=localStorage.getItem('clipboard'); if(data){ const objData=JSON.parse(data); createCube(objData.name+"_copia"); } }, i18nKey: "paste" },
+        { text: t('delete'), action: async () => { if(selectedObjectId) { const confirmed = await showConfirmDialog(t('deleteConfirmMsg')); if (confirmed) removeObject(selectedObjectId); } else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "delete" }
+    ];
+    editActions.forEach(item => { const a = document.createElement('a'); a.href='#'; a.textContent = item.text; a.setAttribute('data-i18n', item.i18nKey); a.addEventListener('click', (e) => { e.preventDefault(); item.action(); }); dropdownEditar.appendChild(a); });
+    const dropdownInsertar = document.getElementById('dropdownInsertar');
+    const primitives = [
+        { name:"Cubo", i18nKey:"insertCube", func:()=>createCube("Cubo") },
+        { name:"Esfera", i18nKey:"insertSphere", func:()=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(0.5,32,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Esfera","sphere"); } },
+        { name:"Cilindro", i18nKey:"insertCylinder", func:()=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cilindro","cylinder"); } },
+        { name:"Cono", i18nKey:"insertCone", func:()=>{ const m=new THREE.Mesh(new THREE.ConeGeometry(0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cono","cone"); } },
+        { name:"Toro", i18nKey:"insertTorus", func:()=>{ const m=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.2,32,64), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Toro","torus"); } },
+        { name:"Cámara", i18nKey:"insertCamera", func:()=>createCameraObject() },
+        { name:"Luz", i18nKey:"insertLight", func:()=>createLightObject() }
+    ];
+    primitives.forEach(p => { const a = document.createElement('a'); a.href='#'; a.setAttribute('data-i18n', p.i18nKey); a.textContent = p.name; a.addEventListener('click', (e) => { e.preventDefault(); p.func(); updateObjectListUI(); }); dropdownInsertar.appendChild(a); });
+    const loadModelItem = document.createElement('a'); loadModelItem.href='#'; loadModelItem.setAttribute('data-i18n', 'loadModelOption'); loadModelItem.textContent='Cargar modelo 3D...';
+    loadModelItem.addEventListener('click', async (e) => { e.preventDefault(); const input = document.createElement('input'); input.type = 'file'; input.accept = '.gltf,.glb,.obj,.stl'; input.onchange = async () => { const file = input.files[0]; if(file){ try{ const mesh=await importModel(file); addObject(mesh, file.name, 'imported'); updateObjectListUI(); } catch(err){ showCustomAlert('Error: '+err.message); } } }; input.click(); });
+    dropdownInsertar.appendChild(loadModelItem);
+    document.getElementById('exportProject').addEventListener('click', (e) => { e.preventDefault(); exportProjectToZip(); });
+    document.getElementById('importProject').addEventListener('click', (e) => { e.preventDefault(); const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip'; input.onchange = async (ev) => { if(input.files[0]) await importProjectFromZip(input.files[0]); }; input.click(); });
+    document.getElementById('newProject').addEventListener('click', (e) => { e.preventDefault(); if(confirm("¿Crear nuevo proyecto? Se perderán los cambios.")) { for (let obj of [...objects]) removeObject(obj.id); deleteAllKeyframes("all"); createCube("Cubo"); recalcMaxTime(); updateTimelineUI(); } });
+    document.getElementById('exportSTL').addEventListener('click', (e) => { e.preventDefault(); exportSelectedSTL(); });
+    document.getElementById('exportGLTF').addEventListener('click', (e) => { e.preventDefault(); exportSelectedGLTF(); });
+    document.getElementById('resetCamera').addEventListener('click', (e) => { e.preventDefault(); resetCamera(); });
+    document.getElementById('toggleGrid').addEventListener('click', (e) => { e.preventDefault(); toggleGridVisibility(); });
+    document.getElementById('importModel').addEventListener('click', (e) => { e.preventDefault(); document.querySelector('#dropdownInsertar a:last-child').click(); });
+    document.getElementById('loadModelBtn').addEventListener('click', () => { document.querySelector('#dropdownInsertar a:last-child').click(); });
+    const modalOverlayEl = document.getElementById('modalOverlay');
+    const modalEl = document.getElementById('customModal');
+    const modalTitleEl = document.getElementById('modalTitle');
+    const modalContentEl = document.getElementById('modalContent');
+    function showCustomModal(title, contentHtml, showCancel = true) {
+        return new Promise((resolve) => {
+            modalTitleEl.innerText = title;
+            modalContentEl.innerHTML = contentHtml;
+            modalOverlayEl.style.display = 'block';
+            modalEl.style.display = 'block';
+            const onOk = () => { closeModalNow(); resolve(true); };
+            const onCancel = () => { closeModalNow(); resolve(false); };
+            document.getElementById('modalOk').onclick = onOk;
+            document.getElementById('modalCancel').onclick = onCancel;
+            if(!showCancel) document.getElementById('modalCancel').style.display = 'none';
+            else document.getElementById('modalCancel').style.display = 'inline-block';
+        });
+        function closeModalNow() { modalOverlayEl.style.display = 'none'; modalEl.style.display = 'none'; }
+    }
+    window.showCustomAlert = (msg, autoClose = true) => {
+        showCustomModal('Información', `<p>${msg}</p>`, false);
+        if (autoClose) setTimeout(() => { if (modalOverlayEl.style.display === 'block') { modalOverlayEl.style.display = 'none'; modalEl.style.display = 'none'; } }, 2000);
+    };
+    async function showConfirmDialog(message) {
+        return new Promise((resolve) => {
+            modalTitleEl.innerText = t('confirmDelete');
+            modalContentEl.innerHTML = `<p>${message}</p>`;
+            modalOverlayEl.style.display = 'block';
+            modalEl.style.display = 'block';
+            const okBtn = document.getElementById('modalOk');
+            const cancelBtn = document.getElementById('modalCancel');
+            const onOk = () => {
+                modalOverlayEl.style.display = 'none';
+                modalEl.style.display = 'none';
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                resolve(true);
+            };
+            const onCancel = () => {
+                modalOverlayEl.style.display = 'none';
+                modalEl.style.display = 'none';
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                resolve(false);
+            };
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+    function updateUIStrings() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (key) el.innerText = t(key);
+        });
+        const addBtn = document.querySelector('#timelineAddBtn');
+        if (addBtn) addBtn.innerText = t('addKeyframe');
+        const playBtn = document.querySelector('#timelinePlayBtn');
+        if (playBtn) playBtn.innerText = t('play');
+        const stopBtn = document.querySelector('#timelineStopBtn');
+        if (stopBtn) stopBtn.innerText = t('stop');
+        const globalLabelSpan = document.querySelector('#classicTimeline .timeline-controls label span[data-i18n="globalTimeLabel"]');
+        if (globalLabelSpan) globalLabelSpan.innerText = t('globalTimeLabel');
+        const keyframeHeaderSpan = document.querySelector('#keyframeListHeader span:first-child');
+        if (keyframeHeaderSpan && keyframeHeaderSpan.getAttribute('data-i18n') === 'keyframesListTitle') {
+            keyframeHeaderSpan.innerText = t('keyframesListTitle');
+        }
+        if (document.getElementById('propertiesPanel').classList.contains('open') && selectedObjectId !== null) showProperties(selectedObjectId);
+        const floatModal = document.getElementById('floatModal');
+        if (floatModal.style.display === 'block') {
+            const selectedObj = objects.find(o => o.id === selectedObjectId);
+            if (selectedObj) document.getElementById('floatModalTitle').innerText = `${t('propName')}: ${selectedObj.name}`;
+        }
+        updateLessonPanelContent();
+        // Actualizar texto de las acciones de edición
+        const editLinks = document.querySelectorAll('#dropdownEditar a');
+        if (editLinks.length === editActions.length) {
+            editLinks.forEach((link, idx) => {
+                const action = editActions[idx];
+                if (action) link.textContent = t(action.i18nKey);
+            });
+        }
+    }
+    document.getElementById('langEs').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'es'; updateUIStrings(); });
+    document.getElementById('langEn').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'en'; updateUIStrings(); });
+    function toggleTheme() { document.body.classList.toggle('light-mode'); const isLight = document.body.classList.contains('light-mode'); scene.background.setHex(isLight ? 0xe9eef3 : 0x1c1c24); if(scene.fog) scene.fog.color.setHex(isLight ? 0xe9eef3 : 0x1c1c24); }
+    document.getElementById('toggleTheme').addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); });
+    document.getElementById('exportLista').addEventListener('click', () => { const data = loadAllKeyframes(); const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Lista.json'; a.click(); URL.revokeObjectURL(a.href); });
+    document.getElementById('importLista').addEventListener('click', () => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json'; input.onchange = async (e) => { const file = e.target.files[0]; if(!file) return; const text = await file.text(); try { const data = JSON.parse(text); importKeyframes(data); for(const track of tracks) { const kfs = data[track.name] || []; track.trackObject.keyframes = kfs.map(kf => ({ code: kf.code, time: kf.time, pos: new THREE.Vector3(kf.pos.x, kf.pos.y, kf.pos.z), rot: new THREE.Euler(kf.rot.x, kf.rot.y, kf.rot.z, 'XYZ') })); } recalcMaxTime(); updateTimelineUI(); showCustomAlert('Lista.json importada'); } catch(err) { showCustomAlert('Error: '+err.message); } }; input.click(); });
+    
     // ==================== BLOQUES (INTÉRPRETE PROPIO) ====================
     let blocklyWorkspace = null;
     let blocklyIsPlaying = false;
     let blocklySpeed = 1;
     let cancelBlocklyExecution = false;
-    
     function getCurrentObjectNames() { return objects.map(obj => [obj.name, obj.name]); }
-    
     function defineBlocks() {
         Blockly.Blocks['al_ejecutar'] = { init: function() { this.appendDummyInput().appendField("🚀 Al ejecutar"); this.appendStatementInput("DO").setCheck(null); this.setColour(160); this.setTooltip("Bloque de inicio"); this.contextMenu = false; } };
         Blockly.Blocks['move_object'] = { init: function() { this.appendDummyInput().appendField("mover").appendField(new Blockly.FieldDropdown(getCurrentObjectNames),"object").appendField("a X").appendField(new Blockly.FieldNumber(0),"x").appendField("Y").appendField(new Blockly.FieldNumber(0),"y").appendField("Z").appendField(new Blockly.FieldNumber(0),"z"); this.setPreviousStatement(true,null); this.setNextStatement(true,null); this.setColour(230); } };
@@ -1356,7 +1444,6 @@
         Blockly.Blocks['random_number'] = { init: function() { this.appendDummyInput().appendField("aleatorio entre").appendField(new Blockly.FieldNumber(0),"min").appendField("y").appendField(new Blockly.FieldNumber(10),"max"); this.setOutput(true,"Number"); this.setColour(210); } };
         Blockly.Blocks['get_position_x'] = { init: function() { this.appendDummyInput().appendField("posición X de").appendField(new Blockly.FieldDropdown(getCurrentObjectNames),"object"); this.setOutput(true,"Number"); this.setColour(230); } };
     }
-    
     async function evaluateBlock(block, cancelToken) {
         if (!block) return null;
         if (block.type === 'compare_numbers') {
@@ -1383,7 +1470,6 @@
         }
         return null;
     }
-    
     async function executeBlockSequence(block, cancelToken) {
         if (!block || cancelToken.cancelled) return;
         let current = block;
@@ -1507,7 +1593,6 @@
             if (cancelToken.cancelled) break;
         }
     }
-    
     async function animateTransform(mesh, property, targetValue, duration, cancelToken) {
         return new Promise((resolve) => {
             const startValue = mesh[property].clone();
@@ -1532,7 +1617,6 @@
             animId = requestAnimationFrame(step);
         });
     }
-    
     function initBlockly() {
         if (blocklyWorkspace) return;
         defineBlocks();
@@ -1548,21 +1632,29 @@
         refreshBlocklyObjectDropdowns();
         console.log("✅ Blockly inicializado con intérprete propio.");
     }
-    
     function refreshBlocklyObjectDropdowns() {
         if (!blocklyWorkspace) return;
-        blocklyWorkspace.getAllBlocks().forEach(block => {
-            const fields = block.getFields();
-            for (let name in fields) {
-                const field = fields[name];
-                if (field instanceof Blockly.FieldDropdown && field.menuGenerator_ && field.menuGenerator_.toString().includes('getCurrentObjectNames')) {
-                    field.setOptions(getCurrentObjectNames);
-                    field.forceRerender();
-                }
-            }
+        const objectNames = getCurrentObjectNames();
+        const allBlocks = blocklyWorkspace.getAllBlocks();
+        allBlocks.forEach(block => {
+            block.inputList.forEach(input => {
+                input.fieldRow.forEach(field => {
+                    if (field instanceof Blockly.FieldDropdown) {
+                        try {
+                            if (typeof field.setOptions === 'function') {
+                                field.setOptions(objectNames);
+                            } else if (field.menuGenerator_) {
+                                field.menuGenerator_ = () => objectNames;
+                            }
+                            field.forceRerender();
+                        } catch(e) {
+                            console.warn("Error actualizando dropdown:", e);
+                        }
+                    }
+                });
+            });
         });
     }
-    
     async function playBlocks() {
         if (blocklyIsPlaying) { showCustomAlert("Ya se está ejecutando una secuencia."); return; }
         const topBlocks = blocklyWorkspace.getTopBlocks(true);
@@ -1577,17 +1669,204 @@
         blocklyIsPlaying = false;
         showCustomAlert(cancelBlocklyExecution ? "⏹ Ejecución detenida." : "✅ Ejecución finalizada.");
     }
-    
     function stopBlocks() { if (blocklyIsPlaying) { cancelBlocklyExecution = true; blocklyIsPlaying = false; showCustomAlert("Deteniendo..."); } else { showCustomAlert("No hay ejecución en curso."); } }
     function resetBlocks() { if (blocklyWorkspace) { blocklyWorkspace.clear(); showCustomAlert("Workspace de bloques limpiado."); } }
     function setBlocksSpeed(speed) { blocklySpeed = speed; }
-    
+
+    // ==================== EXPORTACIÓN DE VÍDEO CORREGIDA (desde tiempo 0, sin controles de transformación) ====================
+    async function exportAnimationFromCamera(cameraMesh, duration, speed, onProgress, scene, setCurrentTimeFn, gridGroup) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Guardar estado original de la rejilla, cámara y transformControls
+                const originalGridVisible = gridGroup.visible;
+                const originalCameraVisible = cameraMesh.visible;
+                const originalTransformControlsVisible = transformControls.visible;
+                gridGroup.visible = false;
+                cameraMesh.visible = false;
+                transformControls.visible = false; // Ocultar los ejes de movimiento
+
+                const fps = 60;
+                const width = 1920, height = 1080;
+                const realDuration = duration / speed;
+                if (realDuration <= 0) throw new Error("Duración inválida");
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const offscreenRenderer = new THREE.WebGLRenderer({ canvas, preserveDrawingBuffer: true, alpha: false });
+                offscreenRenderer.setSize(width, height);
+                offscreenRenderer.setClearColor(0x000000);
+                const tempCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+                const stream = canvas.captureStream(fps);
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `animacion_${Date.now()}.webm`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    offscreenRenderer.dispose();
+                    gridGroup.visible = originalGridVisible;
+                    cameraMesh.visible = originalCameraVisible;
+                    transformControls.visible = originalTransformControlsVisible;
+                    if (onProgress) onProgress(100);
+                    resolve();
+                };
+                mediaRecorder.start();
+                const totalFrames = Math.ceil(realDuration * fps);
+                for (let frame = 0; frame <= totalFrames; frame++) {
+                    const tAnim = (frame / fps) * speed;
+                    const timeValue = Math.min(duration, tAnim);
+                    setCurrentTimeFn(timeValue);
+                    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(cameraMesh.quaternion);
+                    const lensOffset = new THREE.Vector3(0, 0.1, 0.45).applyQuaternion(cameraMesh.quaternion);
+                    tempCamera.position.copy(cameraMesh.position.clone().add(lensOffset));
+                    tempCamera.lookAt(cameraMesh.position.clone().add(forward.multiplyScalar(2)));
+                    offscreenRenderer.render(scene, tempCamera);
+                    await new Promise(r => requestAnimationFrame(r));
+                    if (onProgress) onProgress((frame / totalFrames) * 100);
+                }
+                mediaRecorder.stop();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async function exportBlocksAnimation(cameraMesh, scene, gridGroup, onProgress) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const originalGridVisible = gridGroup.visible;
+                const originalCameraVisible = cameraMesh.visible;
+                const originalTransformControlsVisible = transformControls.visible;
+                gridGroup.visible = false;
+                cameraMesh.visible = false;
+                transformControls.visible = false; // Ocultar los ejes de movimiento
+
+                const fps = 60;
+                const width = 1920, height = 1080;
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const offscreenRenderer = new THREE.WebGLRenderer({ canvas, preserveDrawingBuffer: true, alpha: false });
+                offscreenRenderer.setSize(width, height);
+                offscreenRenderer.setClearColor(0x000000);
+                const tempCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+                const stream = canvas.captureStream(fps);
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `animacion_bloques_${Date.now()}.webm`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    offscreenRenderer.dispose();
+                    gridGroup.visible = originalGridVisible;
+                    cameraMesh.visible = originalCameraVisible;
+                    transformControls.visible = originalTransformControlsVisible;
+                    if (onProgress) onProgress(100);
+                    resolve();
+                };
+                mediaRecorder.start();
+                const wasPlayingBlocks = blocklyIsPlaying;
+                if (wasPlayingBlocks) stopBlocks();
+                // Iniciar ejecución de bloques
+                blocklyIsPlaying = true;
+                cancelBlocklyExecution = false;
+                const cancelToken = { cancelled: false };
+                const topBlocks = blocklyWorkspace.getTopBlocks(true);
+                let eventBlock = topBlocks.find(b => b.type === 'al_ejecutar');
+                if (!eventBlock) throw new Error("No se encontró bloque 'Al ejecutar'");
+                const doBlock = eventBlock.getInputTargetBlock('DO');
+                if (!doBlock) throw new Error("El bloque 'Al ejecutar' está vacío");
+                const executionPromise = executeBlockSequence(doBlock, cancelToken);
+                let recordingActive = true;
+                const recordFrames = async () => {
+                    while (blocklyIsPlaying && recordingActive) {
+                        const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(cameraMesh.quaternion);
+                        const lensOffset = new THREE.Vector3(0, 0.1, 0.45).applyQuaternion(cameraMesh.quaternion);
+                        tempCamera.position.copy(cameraMesh.position.clone().add(lensOffset));
+                        tempCamera.lookAt(cameraMesh.position.clone().add(forward.multiplyScalar(2)));
+                        offscreenRenderer.render(scene, tempCamera);
+                        await new Promise(r => requestAnimationFrame(r));
+                        if (onProgress) onProgress(50);
+                    }
+                };
+                const recordPromise = recordFrames();
+                await executionPromise;
+                recordingActive = false;
+                blocklyIsPlaying = false;
+                await recordPromise;
+                mediaRecorder.stop();
+                if (!wasPlayingBlocks) stopBlocks();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    window.playAnimation = playAnimation;
+    window.stopAnimation = stopAnimation;
+    window.isPlaying = isPlaying;
+
+    document.getElementById("exportAnimationBtn").addEventListener("click", async () => {
+        if (!currentPreviewCameraObj) {
+            showCustomAlert(t('exportAnim') + ": " + t('noObjectSelected'));
+            return;
+        }
+        if (timelineMode === 'blocks') {
+            if (!blocklyWorkspace) { showCustomAlert("Primero cambia al modo bloques e inserta un bloque 'Al ejecutar'."); return; }
+            showCustomAlert("Exportando animación por bloques...");
+            const progressBar = document.getElementById("videoProgressBar");
+            const progressFill = document.getElementById("videoProgressFill");
+            progressBar.style.display = "block";
+            try {
+                await exportBlocksAnimation(currentPreviewCameraObj, scene, gridGroup, (percent) => {
+                    progressFill.style.width = percent + "%";
+                });
+            } catch (err) {
+                console.error(err);
+                showCustomAlert("Error: " + err.message);
+            } finally {
+                progressBar.style.display = "none";
+            }
+        } else {
+            if (config.maxTime <= 0) {
+                showCustomAlert("La duración de la animación es cero. Añade al menos un keyframe.");
+                return;
+            }
+            showCustomAlert("Preparando exportación...");
+            const progressBar = document.getElementById("videoProgressBar");
+            const progressFill = document.getElementById("videoProgressFill");
+            progressBar.style.display = "block";
+            try {
+                await exportAnimationFromCamera(
+                    currentPreviewCameraObj,
+                    config.maxTime,
+                    config.speed,
+                    (percent) => { progressFill.style.width = percent + "%"; },
+                    scene,
+                    setCurrentTime,
+                    gridGroup
+                );
+            } catch (err) {
+                console.error(err);
+                showCustomAlert("Error: " + err.message);
+            } finally {
+                progressBar.style.display = "none";
+            }
+        }
+    });
+
     // ==================== MENÚ "MÁS" Y CAMBIO DE MODO ====================
     let timelineMode = 'standard';
     const classicTimelineDiv = document.getElementById('classicTimeline');
     const blocksModeDiv = document.getElementById('blocksMode');
-    
-    // Información: usando la descripción larga incrustada
     document.getElementById("infoBtn").addEventListener("click", async (e) => {
         e.preventDefault();
         const info = {
@@ -1627,7 +1906,6 @@
         `;
         showCustomModal(t('info'), html, false);
     });
-    
     document.getElementById("changeTimelineModeBtn").addEventListener("click", (e) => {
         e.preventDefault();
         if (timelineMode === 'standard') {
@@ -1641,7 +1919,6 @@
             timelineMode = 'standard';
         }
     });
-    
     document.getElementById('blocksPlayBtn').addEventListener('click', playBlocks);
     document.getElementById('blocksStopBtn').addEventListener('click', stopBlocks);
     document.getElementById('blocksResetBtn').addEventListener('click', resetBlocks);
@@ -1649,11 +1926,14 @@
     if (blocksSpeedSliderEl) {
         blocksSpeedSliderEl.addEventListener('input', (e) => { const val = parseFloat(e.target.value); blocklySpeed = val; document.getElementById('blocksSpeedValue').innerText = val.toFixed(2)+'x'; const mainSpeedSlider = document.getElementById('speedSlider'); if(mainSpeedSlider) mainSpeedSlider.value = val; config.speed = val; document.getElementById('speedValue').innerText = val.toFixed(2)+'x'; });
     }
-    
-    // ==================== TOUR INTERACTIVO (SIEMPRE AL CARGAR) ====================
-    const skipTourBtn = document.getElementById('skipTourBtn');
+
+    // ==================== TOUR INTERACTIVO CON BOTÓN PERSONALIZADO ====================
+    const skipTourBtn = document.createElement('button');
+    skipTourBtn.textContent = '⏭️ ' + t('skip');
+    skipTourBtn.className = 'skip-tour-custom';
+    skipTourBtn.style.display = 'none';
+    document.body.appendChild(skipTourBtn);
     let currentTour = null;
-    
     function startTour() {
         if (currentTour) currentTour.exit();
         currentTour = introJs();
@@ -1675,25 +1955,17 @@
             nextLabel: t('next'),
             prevLabel: t('prev'),
             doneLabel: t('done'),
-            skipLabel: t('skip')
+            skipLabel: ''
         });
         skipTourBtn.style.display = 'block';
-        currentTour.onbeforeexit(() => {
-            skipTourBtn.style.display = 'none';
-            currentTour = null;
-        });
         currentTour.onexit(() => {
             skipTourBtn.style.display = 'none';
             currentTour = null;
         });
+        currentTour.onbeforeexit(() => { skipTourBtn.style.display = 'none'; });
         currentTour.start();
     }
-    
-    // Iniciar tour automáticamente cada vez que se carga la página
-    setTimeout(() => {
-        startTour();
-    }, 800);
-    
+    setTimeout(() => { startTour(); }, 800);
     skipTourBtn.addEventListener('click', () => {
         if (currentTour) {
             currentTour.exit();
@@ -1702,170 +1974,14 @@
             showCustomAlert(t('tourSkipped'), false);
         }
     });
-    
-    // Añadir opción en el menú "Más" para reiniciar el tour
     const moreDropdown = document.getElementById('dropdownMore');
     const tourItem = document.createElement('a');
     tourItem.href = '#';
     tourItem.textContent = '🎓 ' + t('restartTour');
     tourItem.addEventListener('click', (e) => { e.preventDefault(); startTour(); });
     moreDropdown.appendChild(tourItem);
-    
-    // ==================== ACTUALIZACIÓN DE IDIOMA ====================
-    function updateUIStrings() {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (key) el.innerText = t(key);
-        });
-        const addBtn = document.querySelector('#timelineAddBtn');
-        if (addBtn) addBtn.innerText = t('addKeyframe');
-        const playBtn = document.querySelector('#timelinePlayBtn');
-        if (playBtn) playBtn.innerText = t('play');
-        const stopBtn = document.querySelector('#timelineStopBtn');
-        if (stopBtn) stopBtn.innerText = t('stop');
-        const globalLabelSpan = document.querySelector('#classicTimeline .timeline-controls label span[data-i18n="globalTimeLabel"]');
-        if (globalLabelSpan) globalLabelSpan.innerText = t('globalTimeLabel');
-        const keyframeHeaderSpan = document.querySelector('#keyframeListHeader span:first-child');
-        if (keyframeHeaderSpan && keyframeHeaderSpan.getAttribute('data-i18n') === 'keyframesListTitle') {
-            keyframeHeaderSpan.innerText = t('keyframesListTitle');
-        }
-        // Actualizar paneles abiertos
-        if (document.getElementById('propertiesPanel').classList.contains('open') && selectedObjectId !== null) {
-            showProperties(selectedObjectId);
-        }
-        const floatModal = document.getElementById('floatModal');
-        if (floatModal.style.display === 'block') {
-            const selectedObj = objects.find(o => o.id === selectedObjectId);
-            if (selectedObj) {
-                document.getElementById('floatModalTitle').innerText = `${t('propName')}: ${selectedObj.name}`;
-            }
-        }
-    }
-    
-    document.getElementById('langEs').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'es'; updateUIStrings(); });
-    document.getElementById('langEn').addEventListener('click', (e) => { e.preventDefault(); currentLang = 'en'; updateUIStrings(); });
-    
-    function toggleTheme() { document.body.classList.toggle('light-mode'); const isLight = document.body.classList.contains('light-mode'); scene.background.setHex(isLight ? 0xe9eef3 : 0x1c1c24); if(scene.fog) scene.fog.color.setHex(isLight ? 0xe9eef3 : 0x1c1c24); }
-    document.getElementById('toggleTheme').addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); });
-    
-    // ==================== EXPORTAR LISTA DE KEYFRAMES ====================
-    document.getElementById('exportLista').addEventListener('click', () => { const data = loadAllKeyframes(); const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Lista.json'; a.click(); URL.revokeObjectURL(a.href); });
-    document.getElementById('importLista').addEventListener('click', () => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json'; input.onchange = async (e) => { const file = e.target.files[0]; if(!file) return; const text = await file.text(); try { const data = JSON.parse(text); importKeyframes(data); for(const track of tracks) { const kfs = data[track.name] || []; track.trackObject.keyframes = kfs.map(kf => ({ code: kf.code, time: kf.time, pos: new THREE.Vector3(kf.pos.x, kf.pos.y, kf.pos.z), rot: new THREE.Euler(kf.rot.x, kf.rot.y, kf.rot.z, 'XYZ') })); } recalcMaxTime(); updateTimelineUI(); showCustomAlert('Lista.json importada'); } catch(err) { showCustomAlert('Error: '+err.message); } }; input.click(); });
-    
-    // ==================== IMPORTAR MODELOS ====================
-    async function importModel(file) {
-        return new Promise((resolve, reject) => {
-            const ext = file.name.split('.').pop().toLowerCase();
-            const url = URL.createObjectURL(file);
-            let loader;
-            if (ext === 'gltf' || ext === 'glb') loader = new GLTFLoader();
-            else if (ext === 'obj') loader = new OBJLoader();
-            else if (ext === 'stl') loader = new STLLoader();
-            else reject(new Error('Formato no soportado'));
-            loader.load(url, (result) => {
-                URL.revokeObjectURL(url);
-                let model;
-                if (result.scene) model = result.scene;
-                else if (result instanceof THREE.Group) model = result;
-                else if (result instanceof THREE.BufferGeometry) { const material = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.6 }); model = new THREE.Mesh(result, material); }
-                else model = result;
-                const box = new THREE.Box3().setFromObject(model);
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 2.0 / maxDim;
-                model.scale.set(scale, scale, scale);
-                const center = box.getCenter(new THREE.Vector3());
-                model.position.sub(center.clone().multiplyScalar(scale));
-                model.traverse(child => { if (child.isMesh) child.castShadow = true; });
-                model.userData.originalFileData = file;
-                model.modelFormat = ext;
-                resolve(model);
-            }, undefined, (error) => { URL.revokeObjectURL(url); reject(error); });
-        });
-    }
-    
-    // ==================== EXPORTAR STL/GLTF ====================
-    function exportSelectedSTL() { const obj = objects.find(o => o.id === selectedObjectId); if(!obj) { showCustomAlert(t('selectObjectMsg')); return; } const exporter = new STLExporter(); const stlString = exporter.parse(obj.mesh, { binary: false }); const blob = new Blob([stlString], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${obj.name}.stl`; a.click(); URL.revokeObjectURL(a.href); }
-    function exportSelectedGLTF() { const obj = objects.find(o => o.id === selectedObjectId); if(!obj) { showCustomAlert(t('selectObjectMsg')); return; } const exporter = new GLTFExporter(); exporter.parse(obj.mesh, (result) => { const jsonString = JSON.stringify(result, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${obj.name}.gltf`; a.click(); URL.revokeObjectURL(a.href); }, { binary: false }); }
-    function resetCamera() { mainCamera.position.set(8,6,12); controls.target.set(0,0,0); controls.update(); }
-    function createCube(name) { const geometry = new THREE.BoxGeometry(1,1,1); const material = new THREE.MeshStandardMaterial({ color: 0x5f91d7, metalness: 0.7 }); const mesh = new THREE.Mesh(geometry, material); return addObject(mesh, name, 'cube'); }
-    function createCameraObject() { const group = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.8), new THREE.MeshStandardMaterial({ color: 0x888888 })); body.position.y=0; const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.1,16), new THREE.MeshStandardMaterial({ color: 0x333333 })); lens.rotation.x=Math.PI/2; lens.position.z=0.45; lens.position.y=0.1; const top = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.1,0.4), new THREE.MeshStandardMaterial({ color: 0xaaaaaa })); top.position.y=0.25; group.add(body,lens,top); return addObject(group, 'Cámara', 'camera'); }
-    function createLightObject() { const light = new THREE.PointLight(0xffffff, 1); return addObject(light, 'Luz', 'light'); }
-    
-    // ==================== MENÚS DESPLEGABLES ====================
-    function setupDropdowns() { const menus = document.querySelectorAll('.menu'); let active = null; menus.forEach(menu => { const dropdown = menu.querySelector('.dropdown'); if(!dropdown) return; menu.addEventListener('click', (e) => { e.stopPropagation(); if(active === dropdown) { dropdown.style.display = 'none'; active = null; } else { if(active) active.style.display = 'none'; dropdown.style.display = 'block'; active = dropdown; } }); }); document.addEventListener('click', () => { if(active) { active.style.display = 'none'; active = null; } }); }
-    setupDropdowns();
-    
-    // ==================== MENÚ EDITAR ====================
-    const dropdownEditar = document.getElementById('dropdownEditar');
-    const editActions = [
-        { text: "Mover objeto", action: () => { if(selectedObjectId) transformControls.setMode('translate'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "move" },
-        { text: "Rotar objeto", action: () => { if(selectedObjectId) transformControls.setMode('rotate'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "rotate" },
-        { text: "Escalar objeto", action: () => { if(selectedObjectId) transformControls.setMode('scale'); else showCustomAlert(t('selectObjectMsg')); }, i18nKey: "scale" },
-        { text: "Copiar", action: () => { const obj=objects.find(o=>o.id===selectedObjectId); if(obj) localStorage.setItem('clipboard',JSON.stringify(obj)); }, i18nKey: "copy" },
-        { text: "Pegar", action: () => { const data=localStorage.getItem('clipboard'); if(data){ const objData=JSON.parse(data); createCube(objData.name+"_copia"); } }, i18nKey: "paste" },
-        { text: "Eliminar", action: () => { if(selectedObjectId && confirm(t('deleteConfirm') || "¿Eliminar?")) removeObject(selectedObjectId); }, i18nKey: "delete" }
-    ];
-    editActions.forEach(item => { const a = document.createElement('a'); a.href='#'; a.textContent = item.text; a.setAttribute('data-i18n', item.i18nKey); a.addEventListener('click', (e) => { e.preventDefault(); item.action(); }); dropdownEditar.appendChild(a); });
-    
-    // ==================== MENÚ INSERTAR ====================
-    const dropdownInsertar = document.getElementById('dropdownInsertar');
-    const primitives = [
-        { name:"Cubo", i18nKey:"insertCube", func:()=>createCube("Cubo") },
-        { name:"Esfera", i18nKey:"insertSphere", func:()=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(0.5,32,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Esfera","sphere"); } },
-        { name:"Cilindro", i18nKey:"insertCylinder", func:()=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cilindro","cylinder"); } },
-        { name:"Cono", i18nKey:"insertCone", func:()=>{ const m=new THREE.Mesh(new THREE.ConeGeometry(0.5,1,32), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Cono","cone"); } },
-        { name:"Toro", i18nKey:"insertTorus", func:()=>{ const m=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.2,32,64), new THREE.MeshStandardMaterial({color:0x5f91d7})); addObject(m,"Toro","torus"); } },
-        { name:"Cámara", i18nKey:"insertCamera", func:()=>createCameraObject() },
-        { name:"Luz", i18nKey:"insertLight", func:()=>createLightObject() }
-    ];
-    primitives.forEach(p => { const a = document.createElement('a'); a.href='#'; a.setAttribute('data-i18n', p.i18nKey); a.textContent = p.name; a.addEventListener('click', (e) => { e.preventDefault(); p.func(); updateObjectListUI(); }); dropdownInsertar.appendChild(a); });
-    const loadModelItem = document.createElement('a'); loadModelItem.href='#'; loadModelItem.setAttribute('data-i18n', 'loadModelOption'); loadModelItem.textContent='Cargar modelo 3D...';
-    loadModelItem.addEventListener('click', async (e) => { e.preventDefault(); const input = document.createElement('input'); input.type = 'file'; input.accept = '.gltf,.glb,.obj,.stl'; input.onchange = async () => { const file = input.files[0]; if(file){ try{ const mesh=await importModel(file); addObject(mesh, file.name, 'imported'); updateObjectListUI(); } catch(err){ showCustomAlert('Error: '+err.message); } } }; input.click(); });
-    dropdownInsertar.appendChild(loadModelItem);
-    
-    // ==================== ACCIONES DE MENÚ ARCHIVO Y VER ====================
-    document.getElementById('exportProject').addEventListener('click', (e) => { e.preventDefault(); exportProjectToZip(); });
-    document.getElementById('importProject').addEventListener('click', (e) => { e.preventDefault(); const input = document.createElement('input'); input.type = 'file'; input.accept = '.zip'; input.onchange = async (ev) => { if(input.files[0]) await importProjectFromZip(input.files[0]); }; input.click(); });
-    document.getElementById('newProject').addEventListener('click', (e) => { e.preventDefault(); if(confirm("¿Crear nuevo proyecto? Se perderán los cambios.")) { for (let obj of [...objects]) removeObject(obj.id); deleteAllKeyframes("all"); createCube("Cubo"); recalcMaxTime(); updateTimelineUI(); } });
-    document.getElementById('exportSTL').addEventListener('click', (e) => { e.preventDefault(); exportSelectedSTL(); });
-    document.getElementById('exportGLTF').addEventListener('click', (e) => { e.preventDefault(); exportSelectedGLTF(); });
-    document.getElementById('resetCamera').addEventListener('click', (e) => { e.preventDefault(); resetCamera(); });
-    document.getElementById('toggleGrid').addEventListener('click', (e) => { e.preventDefault(); toggleGridVisibility(); });
-    document.getElementById('importModel').addEventListener('click', (e) => { e.preventDefault(); document.querySelector('#dropdownInsertar a:last-child').click(); });
-    document.getElementById('loadModelBtn').addEventListener('click', () => { document.querySelector('#dropdownInsertar a:last-child').click(); });
-    
-    // ==================== MODAL PERSONALIZADO (con closeModal corregida) ====================
-    const modalOverlayEl = document.getElementById('modalOverlay');
-    const modalEl = document.getElementById('customModal');
-    const modalTitleEl = document.getElementById('modalTitle');
-    const modalContentEl = document.getElementById('modalContent');
-    function showCustomModal(title, contentHtml, showCancel = true) {
-        return new Promise((resolve) => {
-            modalTitleEl.innerText = title;
-            modalContentEl.innerHTML = contentHtml;
-            modalOverlayEl.style.display = 'block';
-            modalEl.style.display = 'block';
-            const onOk = () => { closeModalNow(); resolve(true); };
-            const onCancel = () => { closeModalNow(); resolve(false); };
-            document.getElementById('modalOk').onclick = onOk;
-            document.getElementById('modalCancel').onclick = onCancel;
-            if(!showCancel) document.getElementById('modalCancel').style.display = 'none';
-            else document.getElementById('modalCancel').style.display = 'inline-block';
-        });
-        function closeModalNow() { modalOverlayEl.style.display = 'none'; modalEl.style.display = 'none'; }
-    }
-    window.showCustomAlert = (msg, autoClose = true) => {
-        showCustomModal('Información', `<p>${msg}</p>`, false);
-        if (autoClose) setTimeout(() => {
-            if (modalOverlayEl.style.display === 'block') {
-                modalOverlayEl.style.display = 'none';
-                modalEl.style.display = 'none';
-            }
-        }, 2000);
-    };
-    
-    // ==================== INICIALIZACIÓN ====================
+
+    // ==================== INICIALIZACIÓN FINAL ====================
     function animate() { requestAnimationFrame(animate); controls.update(); updateDynamicGrid(); renderer.render(scene, mainCamera); }
     animate();
     createCube('Cubo');
